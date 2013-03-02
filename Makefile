@@ -7,11 +7,11 @@ SOURCE := \
 logging.cpp
 
 INCLUDE := \
-net_structs/arp_ipv4.h \
-net_structs/ethernet_ii_header.h \
-net_structs/ipv4_header.h \
+netstructs/arp_ipv4.h \
+netstructs/ethernet_ii_header.h \
+netstructs/ipv4_header.h \
 logging.hpp \
 sproxy.hpp
 
 $(TARGET): $(TARGET).cpp $(SOURCE) $(INCLUDE)
-	g++ -I. -Inet_structs -Isocket -Lsocket -Wall -g2 -o $@ $< $(SOURCE) socket/libsocket.a
+	g++ -I. -Inetstructs -Isocket -Lsocket -Wall -g2 -o $@ $< $(SOURCE) socket/libsocket.a
