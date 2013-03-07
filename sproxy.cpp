@@ -23,10 +23,10 @@
 #include "sproxy.hpp"
 
 #include "LinuxRawSocket.hpp"
+#include "Log.hpp"
 #include "arp_ipv4.h"
 #include "ethernet_ii_header.h"
 #include "ipv4_header.h"
-#include "logging.hpp"
 #include "tcp_header.h"
 
 
@@ -56,6 +56,9 @@ bool is_big_endian;
 // Has the main service loop been entered?
 bool service_started;
 
+// Used to log important sproxy activities
+Log log;
+
 
 //=============================================================================
 // Shuts down, stops sleep checker thread, frees memory
@@ -65,7 +68,7 @@ void clean_exit(int unused)
   // Log that the service is stopping; the service is considered started when
   // the sleep checker is running, so when it's stopped then the service is
   // stopped
-  log_stopping();
+  log.write("Service stopping");
 
   // We're done, exit
   exit(0);
@@ -77,6 +80,131 @@ void clean_exit(int unused)
 double get_time(const timeval& time)
 {
   return time.tv_sec + static_cast<double>(time.tv_usec) / 1e6;
+}
+
+//==============================================================================
+// Converts binary MAC address to a string representation
+//==============================================================================
+void mac_to_string(const unsigned char* const mac,
+		   std::string&               mac_str)
+{
+  char mac_cstr[18];
+  sprintf(mac_cstr, "%02x:%02x:%02x:%02x:%02x:%02x",
+	  mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+  mac_str = mac_cstr;
+}
+
+//==============================================================================
+// Converts binary IP address to a string representation
+//==============================================================================
+void ip_to_string(const unsigned char* const ip,
+		  std::string&               ip_str)
+{
+  char ip_cstr[16];
+  sprintf(ip_cstr, "%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
+
+  ip_str = ip_cstr;
+}
+
+//=============================================================================
+// Issuing a WOL
+//=============================================================================
+void log_issuing_wol(const unsigned char* const mac_address,
+		     const unsigned char* const requesting_mac)
+{
+  // Parse target mac into a string
+  std::string mac_address_str;
+  mac_to_string(mac_address, mac_address_str);
+
+  // Parse requesting mac into a string
+  std::string requesting_mac_str;
+  mac_to_string(requesting_mac, requesting_mac_str);
+
+  // Issue the log message
+  log.write("Issuing WOL for " + mac_address_str +
+	    " on behalf of " + requesting_mac_str);
+}
+
+//=============================================================================
+// Issuing a gratuitous ARP
+//=============================================================================
+void log_issuing_garp(const unsigned char* const ip_address,
+		      const unsigned char* const mac_address,
+		      const unsigned char* const traffic_mac = 0)
+{
+  std::string mac_address_str;
+
+  // See if the MAC address we're dealing with is the proxy's MAC address, and
+  // if it is, we'll print 'self' in the log in place of the proxy's MAC,
+  // because this is easier to understand
+  if (memcmp(own_mac, mac_address, 6) == 0)
+  {
+    mac_address_str = "self";
+  }
+  else
+  {
+    // Parse mac address into a string
+    mac_to_string(mac_address, mac_address_str);
+  }
+
+  // Parse IP address into a string
+  std::string ip_address_str;
+  ip_to_string(ip_address, ip_address_str);
+
+  // Define message now, may be appended to later
+  std::string message = "Issuing gratuitous ARP associating " +
+    ip_address_str + " with " + mac_address_str;
+
+  // If a traffic mac was given, incorporate that into the log message
+  if (traffic_mac)
+  {
+    // Parse traffic mac into a string
+    std::string traffic_mac_str;
+    mac_to_string(traffic_mac, traffic_mac_str);
+
+    // Append to previously defined message
+    message += " on behalf of " + traffic_mac_str;
+  }
+
+  // Issue the log message
+  log.write(message);
+}
+
+//=============================================================================
+// Device has awoken
+//=============================================================================
+void log_device_awake(const unsigned char* const ip_address,
+		      const unsigned char* const mac_address)
+{
+  // Parse mac into string
+  std::string mac_address_str;
+  mac_to_string(mac_address, mac_address_str);
+
+  // Parse IP address into string
+  std::string ip_address_str;
+  ip_to_string(ip_address, ip_address_str);
+
+  // Issue the log message
+  log.write("Device " + mac_address_str + " (" + ip_address_str + ") is awake");
+}
+
+//=============================================================================
+// Device has fallen asleep
+//=============================================================================
+void log_device_asleep(const unsigned char* const ip_address,
+		       const unsigned char* const mac_address)
+{
+  // Parse mac into string
+  std::string mac_address_str;
+  mac_to_string(mac_address, mac_address_str);
+
+  // Parse IP address into string
+  std::string ip_address_str;
+  ip_to_string(ip_address, ip_address_str);
+
+  // Issue the log message
+  log.write("Device " + mac_address_str + " (" + ip_address_str + ") is asleep");
 }
 
 //=============================================================================
@@ -823,7 +951,7 @@ int main(int argc, char** argv)
 
   // Note that the service has started
   service_started = true;
-  log_starting();
+  log.write("Service starting");
 
   // The service is not intended to stop
   while(1)
