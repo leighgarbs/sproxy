@@ -1,17 +1,19 @@
 # Sleep proxy makefile
 # Leigh Garbs
 
-TARGET := sproxy
+SRC := \
+sproxy.cpp
 
-SOURCE := \
-logging.cpp
-
-INCLUDE := \
+INC := \
+log/Log.hpp \
 netstructs/arp_ipv4.h \
 netstructs/ethernet_ii_header.h \
 netstructs/ipv4_header.h \
-logging.hpp \
 sproxy.hpp
 
-$(TARGET): $(TARGET).cpp $(SOURCE) $(INCLUDE)
-	g++ -I. -Inetstructs -Isocket -Lsocket -Wall -g2 -o $@ $< $(SOURCE) socket/libsocket.a
+LIB := \
+log/liblog.a \
+socket/libsocket.a
+
+sproxy: $(SRC) $(INC) $(LIB)
+	g++ -I. -Ilog -Inetstructs -Isocket -Wall -g2 -o $@ $(SRC) $(LIB)
