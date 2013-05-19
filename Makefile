@@ -8,8 +8,7 @@ INC := \
 log/Log.hpp \
 netstructs/arp_ipv4.h \
 netstructs/ethernet_ii_header.h \
-netstructs/ipv4_header.h \
-sproxy.hpp
+netstructs/ipv4_header.h
 
 LIB := \
 log/liblog.a \

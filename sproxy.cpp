@@ -11,16 +11,16 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 #include <fstream>
-#include <iostream>
 #include <linux/if_ether.h>
 #include <net/if.h>
 #include <sstream>
+#include <string>
 #include <sys/ioctl.h>
 #include <sys/time.h>
 #include <unistd.h>
-
-#include "sproxy.hpp"
+#include <vector>
 
 #include "LinuxRawSocket.hpp"
 #include "Log.hpp"
@@ -30,19 +30,71 @@
 #include "tcp_header.h"
 
 
-#define SLEEP_CHECK_WAIT_TIME        10
-#define DEVICE_RESPONSE_GRACE_PERIOD 1
-#define AGGRESSIVE_GARP              true
+// Length of the input buffers used during config and default file parsing
+#define PARSING_BUFFER_LENGTH 1000
+
+// Filename of the default settings file, typically located in /etc/default
+std::string default_filename = "/etc/default/sproxy";
+
+
+// THESE CONFIGURATION VARIABLES ARE SET BASED ON THE DEFAULT FILE AND/OR
+// PROGRAM ARGUMENTS
+
+// Name of the interface on which proxying will take place
+std::string interface_name = "eth0";
+
+// Filename of the config file, typically located in /etc
+std::string config_filename = "/etc/sproxy.conf";
+
+// Filename of the log file, typically located in /var/log
+std::string log_filename = "/var/log/sproxy.log";
+
+// Whether or not this process should daemonize
+bool daemonize = false;
+
+// Length of time between device checks
+unsigned int device_check_period = 10;
+
+// How long to wait for responses from monitored devices after querying them
+unsigned int device_response_grace_period = 1;
+
+// Aggressively keep the network up to date on changing ARP status?
+bool aggressive_garp = true;
+
+
+// Details all needed information about a device on the LAN this program may
+// proxy for
+struct Device
+{
+  // Whether or not this device is believed to currently be sleeping
+  bool is_sleeping;
+
+  // Whether or not this device is awake; used in short-term sleep testing
+  bool is_awake;
+
+  // IP address
+  unsigned char ip_address[4];
+
+  // MAC address
+  unsigned char mac_address[6];
+
+  // List of ports this device considers important; it will be woken if traffic
+  // comes in on one of them
+  std::vector<unsigned short> ports;
+
+  // Last time this device was issued a WOL frame
+  time_t last_wol_timestamp;
+
+  // Last time a gratuitous ARP was issued on behalf of this device
+  time_t last_garp_timestamp;
+};
 
 // Stores known devices to monitor
 std::vector<Device> devices;
 
-// Stores a template ARP request used when checking for sleepiness in monitored
-// hosts
+// Stores a template ARP request used when checking if monitored hosts are
+// asleep
 char arp_request[sizeof(ethernet_ii_header) + sizeof(arp_ipv4)];
-
-// Name of the interface on which proxying will take place
-char* interface_name = 0;
 
 // Stores the MAC of the device this proxy is using to monitor network traffic
 char own_mac[6];
@@ -53,25 +105,109 @@ char own_ip[4];
 // Is this host big-endian?
 bool is_big_endian;
 
-// Has the main service loop been entered?
-bool service_started;
-
 // Used to log important sproxy activities
 Log log;
 
 
 //=============================================================================
-// Shuts down, stops sleep checker thread, frees memory
+// Performs any clean up that must be done before the program halts
 //=============================================================================
 void clean_exit(int unused)
 {
-  // Log that the service is stopping; the service is considered started when
-  // the sleep checker is running, so when it's stopped then the service is
-  // stopped
+  // Log that the service is stopping
   log.write("Service stopping");
 
   // We're done, exit
   exit(0);
+}
+
+//=============================================================================
+// Processes program arguments
+//=============================================================================
+bool process_arguments(int argc, char** argv)
+{
+  // Loop over all the arguments, and process them
+  for (int arg = 1; arg < argc; arg++)
+  {
+    // Argument -c specifies the config file filename
+    if (strcmp("-c", argv[arg]) == 0 && arg + 1 < argc)
+    {
+      arg++;
+
+      config_filename = argv[arg];
+    }
+    // Argument -D indicates this process should daemonize itself
+    else if (strcmp("-D", argv[arg]) == 0)
+    {
+      daemonize = true;
+    }
+    // Argument -d specifies the default file filename
+    else if (strcmp("-d", argv[arg]) == 0 && arg + 1 < argc)
+    {
+      arg++;
+
+      default_filename = argv[arg];
+    }
+    // Argument -i specifies an interface to monitor
+    else if (strcmp("-i", argv[arg]) == 0 && arg + 1 < argc)
+    {
+      arg++;
+
+      interface_name = argv[arg];
+    }
+    // Argument -l specifies the log file filename
+    else if (strcmp("-l", argv[arg]) == 0 && arg + 1 < argc)
+    {
+      arg++;
+
+      interface_name = argv[arg];
+    }
+  }
+
+  // If execution reaches here there was an acceptable set of arguments provided
+  return true;
+}
+
+//=============================================================================
+// Obtains the MAC and IP address of the interface to be used
+//=============================================================================
+void obtain_own_mac_and_ip()
+{
+  // Getting MAC and IP addresses requires a socket, doesn't matter what kind
+  int sock_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+  if (sock_fd == -1)
+  {
+    // If something goes wrong, print an error message and quit
+    perror(0);
+    clean_exit(0);
+  }
+  
+  // Fill out an ifreq with name of the target interface
+  ifreq iface;
+  strcpy(iface.ifr_name, interface_name.c_str());
+
+  // Request our MAC address
+  if (ioctl(sock_fd, SIOCGIFHWADDR, &iface) == -1)
+  {
+    // If something goes wrong, print an error message and quit
+    perror(0);
+    clean_exit(0);
+  }
+
+  // Initialize own_mac
+  memcpy(own_mac, iface.ifr_hwaddr.sa_data, 6);
+
+  // Request our IP address
+  if (ioctl(sock_fd, SIOCGIFADDR, &iface) == -1)
+  {
+    // If something goes wrong, print an error message and quit
+    perror(0);
+    clean_exit(0);
+  }
+
+  // Initialize own IP address
+  sockaddr_in* temp_addr = (sockaddr_in*)&iface.ifr_addr;
+  memcpy(own_ip, (const void*)(&(temp_addr->sin_addr.s_addr)), 4);
 }
 
 //=============================================================================
@@ -208,49 +344,137 @@ void log_device_asleep(const unsigned char* const ip_address,
 }
 
 //=============================================================================
-// Parses sproxy configuration file, sets configuration 
+// Parses sproxy defaults file
 //=============================================================================
-void parseConfigFile(const std::string& filename)
+void parseDefaultFile(const std::string& filename)
 {
+  // Open the defaults file
+  std::ifstream default_stream(filename.c_str());
+
+  // Initialize some stuff to be used during parsing
+  char default_line_buffer[PARSING_BUFFER_LENGTH];
+  std::istringstream convert_to_number;
+
+  // Read the entire defaults file
+  while(!default_stream.eof())
+  {
+    // Read a line of the file
+    default_stream.getline(default_line_buffer, PARSING_BUFFER_LENGTH);
+
+    // Convert it to a string
+    std::string default_line_string = default_line_buffer;
+
+    // Ignore the line if it's a comment
+    if (default_line_string[0] == '#')
+    {
+      continue;
+    }
+
+    // Search through the line for a '='
+    size_t equal_sign = default_line_string.find('=');
+
+    // If there isn't an equal sign, or the equal sign is at the beginning or
+    // end of the buffer, just go to the next line because this line is bad
+    if (equal_sign == std::string::npos ||
+	equal_sign == 0 ||
+	equal_sign == default_line_string.length())
+    {
+      continue;
+    }
+
+    // Pull out the strings on the left and right of the equal sign
+    std::string left_side  = default_line_string.substr(0, equal_sign);
+    std::string right_side = default_line_string.substr(equal_sign + 1,
+							std::string::npos);
+
+    // Now set the appropriate variable based on what was just parsed
+    if (left_side == "ETH_INTERFACE")
+    {
+      interface_name = right_side;
+    }
+    else if (left_side == "CONFIG_FILE")
+    {
+      config_filename = right_side;
+    }
+    else if (left_side == "LOG_FILE")
+    {
+      log_filename = right_side;
+    }
+    else if (left_side == "DAEMONIZE")
+    {
+      if (right_side == "yes")
+      {
+	daemonize = true;
+      }
+      else
+      {
+	daemonize = false;
+      }
+    }
+    else if (left_side == "DEVICE_CHECK_PERIOD")
+    {
+      // Convert the right side to a number, that's what it's supposed to be
+      convert_to_number.clear();
+      convert_to_number.str(right_side);
+      convert_to_number >> device_check_period;
+    }
+    else if (left_side == "DEVICE_RESPONSE_GRACE_PERIOD")
+    {
+      convert_to_number.clear();
+      convert_to_number.str(right_side);
+      convert_to_number >> device_response_grace_period;
+    }
+    else if (left_side == "AGGRESSIVE_GARP")
+    {
+      if (right_side == "yes")
+      {
+	aggressive_garp = true;
+      }
+      else
+      {
+	aggressive_garp = false;
+      }
+    }
+  }
 }
 
 //=============================================================================
-// Parses sproxy device file, sets up device list
+// Parses sproxy config file
 //=============================================================================
-void parseDeviceFile(const std::string& filename)
+void parseConfigFile(const std::string& filename)
 {
   // Open the file containing the devices to proxy for
-  std::ifstream devices_stream(filename.c_str());
+  std::ifstream config_stream(filename.c_str());
 
   // Initialize some stuff to be used during parsing
-  char device_info[1000];
-  std::istringstream device_stream;
+  char config_line_buffer[PARSING_BUFFER_LENGTH];
+  std::istringstream config_line;
   std::string token;
   unsigned int line_number = 0;
 
-  // Start reading device information
-  while(!devices_stream.eof())
+  // Start reading config
+  while(!config_stream.eof())
   {
     // Read a line of device information
-    devices_stream.getline(device_info, 1000);
+    config_stream.getline(config_line_buffer, PARSING_BUFFER_LENGTH);
 
     // Increment line counter
     line_number++;
 
     // If nothing was read, we're done parsing input
-    if (devices_stream.gcount() < 1)
+    if (config_stream.gcount() < 1)
     {
       break;
     }
     
     // Clear status from previous iterations
-    device_stream.clear();
+    config_line.clear();
 
     // Convert to a string stream
-    device_stream.str(device_info);
+    config_line.str(config_line_buffer);
     
     // Read the MAC address
-    device_stream >> token;
+    config_line >> token;
 
     // If the line begins with a #, it's a comment line; move on to the next
     // line
@@ -300,7 +524,7 @@ void parseDeviceFile(const std::string& filename)
     }
 
     // Read in the device's IPv4 address
-    device_stream >> token;
+    config_line >> token;
 
     unsigned int temp_ip[4];
     if (sscanf(token.c_str(),
@@ -323,11 +547,11 @@ void parseDeviceFile(const std::string& filename)
     }
 
     // Now read each of this device's important ports
-    while(!device_stream.eof())
+    while(!config_line.eof())
     {
       // First, read into a string
-      device_stream >> token;
-      if (device_stream.fail())
+      config_line >> token;
+      if (config_line.fail())
       {
 	// If nothing was read, we're done with this device
 	break;
@@ -765,7 +989,6 @@ void handle_frame(const char* frame_buffer, unsigned int bytes_read)
   }
 }
 
-
 //=============================================================================
 // Sets the sleep status of all monitored devices based on how they've responded
 // to prior sleep checks
@@ -788,7 +1011,7 @@ void set_sleep_status()
       // traffic bound for it.  To accomplish this, a single gratuitous ARP
       // associating this proxy device's MAC with the IP address of the
       // device that has just fallen asleep can be issued.
-      if (AGGRESSIVE_GARP)
+      if (aggressive_garp)
       {
 	log_issuing_garp(devices[i].ip_address, (const unsigned char*)own_mac);
 	send_garp(devices[i].ip_address, (const unsigned char*)own_mac);
@@ -799,7 +1022,6 @@ void set_sleep_status()
     devices[i].is_sleeping = !devices[i].is_awake;
   }
 }
-
 
 //=============================================================================
 // Issues sleep check messages for all monitored devices
@@ -831,91 +1053,56 @@ void issue_sleep_checks()
   }
 }
 
-
 //=============================================================================
 // Program entry point
 //=============================================================================
 int main(int argc, char** argv)
 {
-  // Service has not started yet
-  service_started = false;
-
-  // Check for required # of arguments
-  if (argc != 4)
-  {
-    fprintf(stderr,
-	    "Usage: %s <config file> <device file> <network device>\n",
-	    argv[0]);
-    return 1;
-  }
-
-  // Save name of interface
-  interface_name = argv[3];
-
-
   // Attach clean_exit to the interrupt signal; users can hit Ctrl+c and stop
-  // the program (it won't stop for anything else besides errors)
+  // the program
   if (signal(SIGINT, clean_exit) == SIG_ERR)
   {
     fprintf(stderr, "Could not attach SIGINT handler\n");
     return 1;
   }
 
+  // Read configuration settings
+  parseDefaultFile(default_filename);
+
+  // Process arguments
+  if (!process_arguments(argc, argv))
+  {
+    // TODO: show a help message here
+    exit(1);
+  }
+
+  // If this process is to daemonize then do it
+  if (daemonize)
+  {
+    if (daemon(0, 0) != 0)
+    {
+      exit(0);
+    }
+  }
+
+  // Initialize the list of devices we'll be proxying for
+  parseConfigFile(config_filename);
+
+  // Initialize the output stream to be used for log file writing
+  std::ofstream log_stream(log_filename.c_str(), std::ofstream::app);
+  log.setOutputStream(log_stream);
 
   // For some of the things this proxy will do, it needs to know the MAC address
   // and IP address of the interface it will be using.  Obtain this information
   // here.
-
-  // Getting MAC and IP addresses requires a socket, doesn't matter what kind
-  int sock_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
-  if (sock_fd == -1)
-  {
-    // If something goes wrong, print an error message and quit
-    perror(0);
-    clean_exit(0);
-  }
-  
-  // Fill out an ifreq with name of the target interface
-  ifreq iface;
-  strcpy(iface.ifr_name, interface_name);
-
-  // Request our MAC address
-  if (ioctl(sock_fd, SIOCGIFHWADDR, &iface) == -1)
-  {
-    // If something goes wrong, print an error message and quit
-    perror(0);
-    clean_exit(0);
-  }
-
-  // Initialize own_mac
-  memcpy(own_mac, iface.ifr_hwaddr.sa_data, 6);
-
-  // Request our IP address
-  if (ioctl(sock_fd, SIOCGIFADDR, &iface) == -1)
-  {
-    // If something goes wrong, print an error message and quit
-    perror(0);
-    clean_exit(0);
-  }
-
-  // Initialize own IP address
-  sockaddr_in* temp_addr = (sockaddr_in*)&iface.ifr_addr;
-  memcpy(own_ip, (const void*)(&(temp_addr->sin_addr.s_addr)), 4);
-
+  obtain_own_mac_and_ip();
 
   // Determine endian-ness of this host
   unsigned short test_var = 0xff00;
   is_big_endian = *(unsigned char*)&test_var > 0;
 
-  // Read configuration settings
-  parseConfigFile(argv[1]);
-
-  // Initialize the list of devices we'll be proxying for
-  parseDeviceFile(argv[2]);
-
   // Initialize the template ARP request used during sleep checking
   initialize_arp_request();
-
 
   // Create the socket that will sniff frames
   LinuxRawSocket sniff_socket;
@@ -950,7 +1137,6 @@ int main(int argc, char** argv)
   char frame_buffer[ETH_FRAME_LEN];
 
   // Note that the service has started
-  service_started = true;
   log.write("Service starting");
 
   // The service is not intended to stop
@@ -972,7 +1158,7 @@ int main(int argc, char** argv)
     time_waiting = get_time(current_time) - get_time(last_sleep_check);
 
     // Is it time to perform another sleep check?
-    if (time_waiting > SLEEP_CHECK_WAIT_TIME)
+    if (time_waiting > device_check_period)
     {
       // Save this time as the last time a sleep check was done
       memcpy(&last_sleep_check, &current_time, sizeof(timeval));
@@ -988,7 +1174,7 @@ int main(int argc, char** argv)
     }
 
     // Is it time to see if devices have responded to the sleep check?
-    if (sleep_check_in_progress && time_waiting > DEVICE_RESPONSE_GRACE_PERIOD)
+    if (sleep_check_in_progress && time_waiting > device_response_grace_period)
     {
       // Set the sleep status of all monitored devices
       set_sleep_status();
