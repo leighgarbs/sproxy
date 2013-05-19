@@ -33,34 +33,9 @@
 // Length of the input buffers used during config and default file parsing
 #define PARSING_BUFFER_LENGTH 1000
 
+
 // Filename of the default settings file, typically located in /etc/default
 std::string default_filename = "/etc/default/sproxy";
-
-
-// THESE CONFIGURATION VARIABLES ARE SET BASED ON THE DEFAULT FILE AND/OR
-// PROGRAM ARGUMENTS
-
-// Name of the interface on which proxying will take place
-std::string interface_name = "eth0";
-
-// Filename of the config file, typically located in /etc
-std::string config_filename = "/etc/sproxy.conf";
-
-// Filename of the log file, typically located in /var/log
-std::string log_filename = "/var/log/sproxy.log";
-
-// Whether or not this process should daemonize
-bool daemonize = false;
-
-// Length of time between device checks
-unsigned int device_check_period = 10;
-
-// How long to wait for responses from monitored devices after querying them
-unsigned int device_response_grace_period = 1;
-
-// Aggressively keep the network up to date on changing ARP status?
-bool aggressive_garp = true;
-
 
 // Details all needed information about a device on the LAN this program may
 // proxy for
@@ -107,6 +82,31 @@ bool is_big_endian;
 
 // Used to log important sproxy activities
 Log log;
+
+
+// THESE CONFIGURATION VARIABLES ARE SET BASED ON THE DEFAULT FILE AND/OR
+// PROGRAM ARGUMENTS
+
+// Name of the interface on which proxying will take place
+std::string interface_name = "eth0";
+
+// Filename of the config file, typically located in /etc
+std::string config_filename = "/etc/sproxy.conf";
+
+// Filename of the log file, typically located in /var/log
+std::string log_filename = "/var/log/sproxy.log";
+
+// Whether or not this process should daemonize
+bool daemonize = false;
+
+// Length of time between device checks
+unsigned int device_check_period = 10;
+
+// How long to wait for responses from monitored devices after querying them
+unsigned int device_response_grace_period = 1;
+
+// Aggressively keep the network up to date on changing ARP status?
+bool aggressive_garp = true;
 
 
 //=============================================================================
@@ -346,7 +346,7 @@ void log_device_asleep(const unsigned char* const ip_address,
 //=============================================================================
 // Parses sproxy defaults file
 //=============================================================================
-void parseDefaultFile(const std::string& filename)
+void parse_default_file(const std::string& filename)
 {
   // Open the defaults file
   std::ifstream default_stream(filename.c_str());
@@ -441,7 +441,7 @@ void parseDefaultFile(const std::string& filename)
 //=============================================================================
 // Parses sproxy config file
 //=============================================================================
-void parseConfigFile(const std::string& filename)
+void parse_config_file(const std::string& filename)
 {
   // Open the file containing the devices to proxy for
   std::ifstream config_stream(filename.c_str());
@@ -1067,7 +1067,7 @@ int main(int argc, char** argv)
   }
 
   // Read configuration settings
-  parseDefaultFile(default_filename);
+  parse_default_file(default_filename);
 
   // Process arguments
   if (!process_arguments(argc, argv))
@@ -1081,12 +1081,12 @@ int main(int argc, char** argv)
   {
     if (daemon(0, 0) != 0)
     {
-      exit(0);
+      exit(1);
     }
   }
 
   // Initialize the list of devices we'll be proxying for
-  parseConfigFile(config_filename);
+  parse_config_file(config_filename);
 
   // Initialize the output stream to be used for log file writing
   std::ofstream log_stream(log_filename.c_str(), std::ofstream::app);
