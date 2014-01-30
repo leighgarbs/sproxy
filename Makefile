@@ -5,14 +5,13 @@ SRC := \
 sproxy.cpp
 
 INC := \
-log/Log.hpp \
-netstructs/arp_ipv4.h \
-netstructs/ethernet_ii_header.h \
-netstructs/ipv4_header.h
+toolbox/logging/Log.hpp \
+toolbox/networking/arp_ipv4.h \
+toolbox/networking/ethernet_ii_header.h \
+toolbox/networking/ipv4_header.h
 
 LIB := \
-log/liblog.a \
-socket/libsocket.a
+toolbox/libtoolbox.a
 
 sproxy: $(SRC) $(INC) $(LIB)
-	g++ -I. -Ilog -Inetstructs -Isocket -Wall -g2 -o $@ $(SRC) $(LIB)
+	g++ -I. -Itoolbox/networking -Itoolbox/logging -Wall -g2 -o $@ $(SRC) $(LIB)

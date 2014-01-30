@@ -1,9 +1,3 @@
-[submodule "netstructs"]
-	path = netstructs
-	url = ssh://tower/home/leigh/Code/netstructs
-[submodule "socket"]
-	path = socket
-	url = ssh://tower/home/leigh/Code/socket
-[submodule "log"]
-	path = log
-	url = ssh://tower/home/leigh/Code/log
+[submodule "toolbox"]
+	path = toolbox
+	url = /home/leigh/Code/toolbox
