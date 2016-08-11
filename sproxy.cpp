@@ -35,7 +35,7 @@
 
 
 // Filename of the default settings file, typically located in /etc/default
-std::string default_filename = "/etc/default/sproxy";
+std::string default_filename = "/etc/sproxy/config";
 
 // Details all needed information about a device on the LAN this program may
 // proxy for
@@ -91,7 +91,7 @@ Log log;
 std::string interface_name = "eth0";
 
 // Filename of the config file, typically located in /etc
-std::string config_filename = "/etc/sproxy.conf";
+std::string config_filename = "/etc/sproxy/devices";
 
 // Filename of the log file, typically located in /var/log
 std::string log_filename = "/var/log/sproxy.log";
@@ -350,6 +350,10 @@ void parse_default_file(const std::string& filename)
 {
   // Open the defaults file
   std::ifstream default_stream(filename.c_str());
+  if (!default_stream.good())
+  {
+    return;
+  }
 
   // Initialize some stuff to be used during parsing
   char default_line_buffer[PARSING_BUFFER_LENGTH];
