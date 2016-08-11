@@ -1091,6 +1091,8 @@ int main(int argc, char** argv)
   // Initialize the output stream to be used for log file writing
   std::ofstream log_stream(log_filename.c_str(), std::ofstream::app);
   log.setOutputStream(log_stream);
+  log.flushAfterWrite(true);
+  log.useLocalTime();
 
   // For some of the things this proxy will do, it needs to know the MAC address
   // and IP address of the interface it will be using.  Obtain this information
