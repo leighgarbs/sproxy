@@ -247,19 +247,29 @@ void ip_to_string(const unsigned char* const ip,
 // Issuing a WOL
 //=============================================================================
 void log_issuing_wol(const unsigned char* const mac_address,
-		     const unsigned char* const requesting_mac)
+		     const unsigned char* const ip_address,
+		     const unsigned char* const requesting_mac,
+		     const unsigned char* const requesting_ip)
 {
   // Parse target mac into a string
   std::string mac_address_str;
   mac_to_string(mac_address, mac_address_str);
 
+  // Parse target ip into a string
+  std::string ip_address_str;
+  ip_to_string(ip_address, ip_address_str);
+
   // Parse requesting mac into a string
   std::string requesting_mac_str;
   mac_to_string(requesting_mac, requesting_mac_str);
 
+  std::string requesting_ip_str;
+  ip_to_string(requesting_ip, requesting_ip_str);
+
   // Issue the log message
-  log.write("Issuing WOL for " + mac_address_str +
-	    " on behalf of " + requesting_mac_str);
+  log.write("Issuing WOL for " + mac_address_str + " (" + ip_address_str 
+	    + ") on behalf of " + requesting_mac_str + " (" + requesting_ip_str
+	    + ")");
 }
 
 //=============================================================================
@@ -669,7 +679,8 @@ void send_wol(const unsigned char* const mac_address)
 // was sent; ASSUMES THE DEVICE ASSOCIATED WITH THE GIVEN DEVICE INDEX IS LOCKED
 //=============================================================================
 void wake_device(const unsigned int         device_index,
-		 const unsigned char* const requester_mac = 0)
+		 const unsigned char* const requester_mac,
+		 const unsigned char* const requester_ip)
 {
   // Obtain current time
   time_t current_time = time(0);
@@ -678,7 +689,10 @@ void wake_device(const unsigned int         device_index,
   if (current_time - devices[device_index].last_wol_timestamp >= 1)
   {
     // Log the fact that we're going to issue a WOL
-    log_issuing_wol(devices[device_index].mac_address, requester_mac);
+    log_issuing_wol(devices[device_index].mac_address,
+		    devices[device_index].ip_address,
+		    requester_mac,
+		    requester_ip);
 
     // Send the WOL
     send_wol(devices[device_index].mac_address);
@@ -923,7 +937,9 @@ void handle_frame(const char* frame_buffer, unsigned int bytes_read)
 	    // traffic
 	    if (devices[i].ports.size() == 0)
 	    {  
-	      wake_device(i, eth_frame->mac_source);
+	      wake_device(i,
+			  eth_frame->mac_source,
+			  (unsigned char*)ipv4_hdr->source_ip);
 	    }
 	    else
 	    {
@@ -971,7 +987,9 @@ void handle_frame(const char* frame_buffer, unsigned int bytes_read)
 		// device
 		if (*iter == destination_port)
 		{
-		  wake_device(i, eth_frame->mac_source);
+		  wake_device(i,
+			      eth_frame->mac_source,
+			      (unsigned char*)ipv4_hdr->source_ip);
 		  break;
 		}
 	      }
