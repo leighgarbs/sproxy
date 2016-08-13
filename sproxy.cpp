@@ -181,7 +181,7 @@ void obtain_own_mac_and_ip()
     perror(0);
     clean_exit(0);
   }
-  
+
   // Fill out an ifreq with name of the target interface
   ifreq iface;
   strcpy(iface.ifr_name, interface_name.c_str());
@@ -222,11 +222,11 @@ double get_time(const timeval& time)
 // Converts binary MAC address to a string representation
 //==============================================================================
 void mac_to_string(const unsigned char* const mac,
-		   std::string&               mac_str)
+                   std::string&               mac_str)
 {
   char mac_cstr[18];
   sprintf(mac_cstr, "%02x:%02x:%02x:%02x:%02x:%02x",
-	  mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+          mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
   mac_str = mac_cstr;
 }
@@ -235,7 +235,7 @@ void mac_to_string(const unsigned char* const mac,
 // Converts binary IP address to a string representation
 //==============================================================================
 void ip_to_string(const unsigned char* const ip,
-		  std::string&               ip_str)
+                  std::string&               ip_str)
 {
   char ip_cstr[16];
   sprintf(ip_cstr, "%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
@@ -247,9 +247,9 @@ void ip_to_string(const unsigned char* const ip,
 // Issuing a WOL
 //=============================================================================
 void log_issuing_wol(const unsigned char* const mac_address,
-		     const unsigned char* const ip_address,
-		     const unsigned char* const requesting_mac,
-		     const unsigned char* const requesting_ip)
+                     const unsigned char* const ip_address,
+                     const unsigned char* const requesting_mac,
+                     const unsigned char* const requesting_ip)
 {
   // Parse target mac into a string
   std::string mac_address_str;
@@ -267,17 +267,17 @@ void log_issuing_wol(const unsigned char* const mac_address,
   ip_to_string(requesting_ip, requesting_ip_str);
 
   // Issue the log message
-  log.write("Issuing WOL for " + mac_address_str + " (" + ip_address_str 
-	    + ") on behalf of " + requesting_mac_str + " (" + requesting_ip_str
-	    + ")");
+  log.write("Issuing WOL for " + mac_address_str + " (" + ip_address_str
+            + ") on behalf of " + requesting_mac_str + " (" + requesting_ip_str
+            + ")");
 }
 
 //=============================================================================
 // Issuing a gratuitous ARP
 //=============================================================================
 void log_issuing_garp(const unsigned char* const ip_address,
-		      const unsigned char* const mac_address,
-		      const unsigned char* const traffic_mac = 0)
+                      const unsigned char* const mac_address,
+                      const unsigned char* const traffic_mac = 0)
 {
   std::string mac_address_str;
 
@@ -321,7 +321,7 @@ void log_issuing_garp(const unsigned char* const ip_address,
 // Device has awoken
 //=============================================================================
 void log_device_awake(const unsigned char* const ip_address,
-		      const unsigned char* const mac_address)
+                      const unsigned char* const mac_address)
 {
   // Parse mac into string
   std::string mac_address_str;
@@ -339,7 +339,7 @@ void log_device_awake(const unsigned char* const ip_address,
 // Device has fallen asleep
 //=============================================================================
 void log_device_asleep(const unsigned char* const ip_address,
-		       const unsigned char* const mac_address)
+                       const unsigned char* const mac_address)
 {
   // Parse mac into string
   std::string mac_address_str;
@@ -390,8 +390,8 @@ void parse_default_file(const std::string& filename)
     // If there isn't an equal sign, or the equal sign is at the beginning or
     // end of the buffer, just go to the next line because this line is bad
     if (equal_sign == std::string::npos ||
-	equal_sign == 0 ||
-	equal_sign == default_line_string.length())
+        equal_sign == 0 ||
+        equal_sign == default_line_string.length())
     {
       continue;
     }
@@ -399,7 +399,7 @@ void parse_default_file(const std::string& filename)
     // Pull out the strings on the left and right of the equal sign
     std::string left_side  = default_line_string.substr(0, equal_sign);
     std::string right_side = default_line_string.substr(equal_sign + 1,
-							std::string::npos);
+                                                        std::string::npos);
 
     // Now set the appropriate variable based on what was just parsed
     if (left_side == "ETH_INTERFACE")
@@ -416,14 +416,7 @@ void parse_default_file(const std::string& filename)
     }
     else if (left_side == "DAEMONIZE")
     {
-      if (right_side == "yes")
-      {
-	daemonize = true;
-      }
-      else
-      {
-	daemonize = false;
-      }
+      daemonize = right_side == "yes";
     }
     else if (left_side == "DEVICE_CHECK_PERIOD")
     {
@@ -442,11 +435,11 @@ void parse_default_file(const std::string& filename)
     {
       if (right_side == "yes")
       {
-	aggressive_garp = true;
+        aggressive_garp = true;
       }
       else
       {
-	aggressive_garp = false;
+        aggressive_garp = false;
       }
     }
   }
@@ -480,13 +473,13 @@ void parse_config_file(const std::string& filename)
     {
       break;
     }
-    
+
     // Clear status from previous iterations
     config_line.clear();
 
     // Convert to a string stream
     config_line.str(config_line_buffer);
-    
+
     // Read the MAC address
     config_line >> token;
 
@@ -503,8 +496,8 @@ void parse_config_file(const std::string& filename)
     {
       // If the MAC parsing failed, tell the user why and exit
       std::cerr << "Error in " << filename << "\n"
-		<< "Could not parse MAC address on line " << line_number
-		<< "\n";
+                << "Could not parse MAC address on line " << line_number
+                << "\n";
       clean_exit(0);
     }
 
@@ -516,18 +509,18 @@ void parse_config_file(const std::string& filename)
     // Scan the device's MAC address into temporary storage
     int temp_mac[6];
     if (sscanf(token.c_str(),
-	       "%2x:%2x:%2x:%2x:%2x:%2x",
-	       &temp_mac[0],
-	       &temp_mac[1],
-	       &temp_mac[2],
-	       &temp_mac[3],
-	       &temp_mac[4],
-	       &temp_mac[5]) != 6)
+               "%2x:%2x:%2x:%2x:%2x:%2x",
+               &temp_mac[0],
+               &temp_mac[1],
+               &temp_mac[2],
+               &temp_mac[3],
+               &temp_mac[4],
+               &temp_mac[5]) != 6)
     {
       // If the MAC parsing failed, tell the user why and exit
       std::cerr << "Error in " << filename << "\n"
-		<< "Could not parse MAC address on line " << line_number
-		<< "\n";
+                << "Could not parse MAC address on line " << line_number
+                << "\n";
       clean_exit(0);
     }
 
@@ -542,16 +535,15 @@ void parse_config_file(const std::string& filename)
 
     unsigned int temp_ip[4];
     if (sscanf(token.c_str(),
-	       "%u.%u.%u.%u",
-	       &temp_ip[0],
-	       &temp_ip[1],
-	       &temp_ip[2],
-	       &temp_ip[3]) != 4)
+               "%u.%u.%u.%u",
+               &temp_ip[0],
+               &temp_ip[1],
+               &temp_ip[2],
+               &temp_ip[3]) != 4)
     {
       // If the IP parsing failed, tell the user why and exit
-      std::cerr << "Could not parse IP address on line " << line_number
-		<< "\n";
-      clean_exit(0);      
+      std::cerr << "Could not parse IP address on line " << line_number << "\n";
+      clean_exit(0);
     }
 
     // Copy from temporary storage into permanent storage
@@ -567,8 +559,8 @@ void parse_config_file(const std::string& filename)
       config_line >> token;
       if (config_line.fail())
       {
-	// If nothing was read, we're done with this device
-	break;
+        // If nothing was read, we're done with this device
+        break;
       }
 
       // Try to convert the token that was just read into a port number
@@ -579,10 +571,9 @@ void parse_config_file(const std::string& filename)
       // Check for errors
       if (convert_stream.fail())
       {
-	// If something else went wrong, inform the user and quit
-	std::cerr << "Unable to parse port on line " << line_number
-		  << "\n";
-	clean_exit(0);
+        // If something else went wrong, inform the user and quit
+        std::cerr << "Unable to parse port on line " << line_number << "\n";
+        clean_exit(0);
       }
 
       // Add the port to the device's list
@@ -679,8 +670,8 @@ void send_wol(const unsigned char* const mac_address)
 // was sent; ASSUMES THE DEVICE ASSOCIATED WITH THE GIVEN DEVICE INDEX IS LOCKED
 //=============================================================================
 void wake_device(const unsigned int         device_index,
-		 const unsigned char* const requester_mac,
-		 const unsigned char* const requester_ip)
+                 const unsigned char* const requester_mac,
+                 const unsigned char* const requester_ip)
 {
   // Obtain current time
   time_t current_time = time(0);
@@ -690,9 +681,9 @@ void wake_device(const unsigned int         device_index,
   {
     // Log the fact that we're going to issue a WOL
     log_issuing_wol(devices[device_index].mac_address,
-		    devices[device_index].ip_address,
-		    requester_mac,
-		    requester_ip);
+                    devices[device_index].ip_address,
+                    requester_mac,
+                    requester_ip);
 
     // Send the WOL
     send_wol(devices[device_index].mac_address);
@@ -706,7 +697,7 @@ void wake_device(const unsigned int         device_index,
 // Sends a gratuitous ARP for the specified IP address/MAC address combo
 //=============================================================================
 void send_garp(const unsigned char* ip_address,
-	       const unsigned char* mac_address)
+               const unsigned char* mac_address)
 {
   // Allocate a buffer for the ARP
   unsigned int buf_size = sizeof(ethernet_ii_header) + sizeof(arp_ipv4);
@@ -753,7 +744,7 @@ void send_garp(const unsigned char* ip_address,
 // THE GIVEN MAC ADDRESS IS LOCKED
 //=============================================================================
 void restore_arp_tables(const unsigned int         device_index,
-			const unsigned char* const traffic_mac = 0)
+                        const unsigned char* const traffic_mac = 0)
 {
   // Obtain current time
   time_t current_time = time(0);
@@ -764,12 +755,12 @@ void restore_arp_tables(const unsigned int         device_index,
   {
     // Log the fact that we're going to issue a gratuitous ARP
     log_issuing_garp(devices[device_index].ip_address,
-		     devices[device_index].mac_address,
-		     traffic_mac);
+                     devices[device_index].mac_address,
+                     traffic_mac);
 
     // Send the gratuitous ARP
     send_garp(devices[device_index].ip_address,
-	      devices[device_index].mac_address);
+              devices[device_index].mac_address);
 
     // Save current time as the last time  sent
     devices[device_index].last_garp_timestamp = current_time;
@@ -791,9 +782,7 @@ void handle_frame(const char* frame_buffer, unsigned int bytes_read)
 
   // Drop this frame if it came from the interface the proxy device is using (if
   // it came from ourselves).  Clearly we're not interested in these.
-  if (memcmp((void*)eth_frame->mac_source,
-	     own_mac,
-	     6) == 0)
+  if (memcmp((void*)eth_frame->mac_source, own_mac, 6) == 0)
   {
     return;
   }
@@ -804,18 +793,18 @@ void handle_frame(const char* frame_buffer, unsigned int bytes_read)
   for (unsigned int i = 0; i < devices.size(); i++)
   {
     if (memcmp((void*)devices[i].mac_address,
-	       (void*)(frame_buffer + 6),
-	       6) == 0)
+               (void*)(frame_buffer + 6),
+               6) == 0)
     {
       // If this device is marked as sleeping, update the network's ARP tables
       // so traffic gets send directly to it now, rather than to the proxy; the
       // device is awake so it should handle its own traffic
       if (devices[i].is_sleeping)
       {
-	// Device has just been detected to be awake, log this status change
-	log_device_awake(devices[i].ip_address, devices[i].mac_address);
+        // Device has just been detected to be awake, log this status change
+        log_device_awake(devices[i].ip_address, devices[i].mac_address);
 
-	restore_arp_tables(i);
+        restore_arp_tables(i);
       }
 
       // This device can't be sleeping, because we just got a frame from it.
@@ -846,12 +835,8 @@ void handle_frame(const char* frame_buffer, unsigned int bytes_read)
   char arp_op_type = 0x01;
 
   // Does this frame contain an ARP query?
-  if (memcmp((void*)eth_frame->ethertype,
-	     (void*)arp_type,
-	     2) == 0  &&
-      memcmp((void*)&arp_packet->oper[1],
-	     (void*)&arp_op_type,
-	     1) == 0)
+  if (memcmp((void*)eth_frame->ethertype, (void*)arp_type, 2) == 0  &&
+      memcmp((void*)&arp_packet->oper[1], (void*)&arp_op_type, 1) == 0)
   {
     // Is this query for a sleeping device this program is proxying for?
     for(unsigned int i = 0; i < devices.size(); i++)
@@ -859,58 +844,50 @@ void handle_frame(const char* frame_buffer, unsigned int bytes_read)
       // Check the IP address this query is for against the stored IP addressess
       // of all tracked devices
       if (memcmp((void*)arp_packet->tpa,
-		 (void*)devices[i].ip_address,
-		 4) == 0 &&
-	  devices[i].is_sleeping)
+                 (void*)devices[i].ip_address,
+                 4) == 0 &&
+          devices[i].is_sleeping)
       {
-	// ARP query received for a sleeping device this program is proxying
-	// for.  Send an ARP response causing the sender to direct traffic here
+        // ARP query received for a sleeping device this program is proxying
+        // for.  Send an ARP response causing the sender to direct traffic here
 
-	// Set up the buffer and establish some easy references into it
-	unsigned int buf_size = sizeof(ethernet_ii_header) + sizeof(arp_ipv4);
-	char response_buffer[buf_size];
+        // Set up the buffer and establish some easy references into it
+        unsigned int buf_size = sizeof(ethernet_ii_header) + sizeof(arp_ipv4);
+        char response_buffer[buf_size];
 
-	ethernet_ii_header* response_eth_hdr =
-	  (ethernet_ii_header*)response_buffer;
-	arp_ipv4* response_arp_hdr =
-	  (arp_ipv4*)((char*)response_buffer + sizeof(ethernet_ii_header));
+        ethernet_ii_header* response_eth_hdr =
+          (ethernet_ii_header*)response_buffer;
+        arp_ipv4* response_arp_hdr =
+          (arp_ipv4*)((char*)response_buffer + sizeof(ethernet_ii_header));
 
-	// Fill in Ethernet header
-	memcpy(response_eth_hdr->mac_destination,
-	       eth_frame->mac_source,
-	       6);
-	memcpy(response_eth_hdr->mac_source,
-	       own_mac,
-	       6);
-	memcpy(response_eth_hdr->ethertype,
-	       arp_type,
-	       2);
+        // Fill in Ethernet header
+        memcpy(response_eth_hdr->mac_destination, eth_frame->mac_source, 6);
+        memcpy(response_eth_hdr->mac_source, own_mac, 6);
+        memcpy(response_eth_hdr->ethertype, arp_type, 2);
 
-	// Fill in the ARP packet
-	response_arp_hdr->htype[0] = 0x00;
-	response_arp_hdr->htype[1] = 0x01;
-	memcpy(response_arp_hdr->ptype, ipv4_type, 2);
-	response_arp_hdr->hlen[0] = 0x06;
-	response_arp_hdr->plen[0] = 0x04;
-	response_arp_hdr->oper[0] = 0x00;
-	response_arp_hdr->oper[1] = 0x02;
-	memcpy(response_arp_hdr->sha, own_mac, 6);
-	memcpy(response_arp_hdr->spa, arp_packet->tpa, 4);
-	memcpy(response_arp_hdr->tha, arp_packet->sha, 6);
-	memcpy(response_arp_hdr->tpa, arp_packet->spa, 4);
+        // Fill in the ARP packet
+        response_arp_hdr->htype[0] = 0x00;
+        response_arp_hdr->htype[1] = 0x01;
+        memcpy(response_arp_hdr->ptype, ipv4_type, 2);
+        response_arp_hdr->hlen[0] = 0x06;
+        response_arp_hdr->plen[0] = 0x04;
+        response_arp_hdr->oper[0] = 0x00;
+        response_arp_hdr->oper[1] = 0x02;
+        memcpy(response_arp_hdr->sha, own_mac, 6);
+        memcpy(response_arp_hdr->spa, arp_packet->tpa, 4);
+        memcpy(response_arp_hdr->tha, arp_packet->sha, 6);
+        memcpy(response_arp_hdr->tpa, arp_packet->spa, 4);
 
-	// Issue the response; this should cause the computer that queried for
-	// the sleeping device to believe this computer IS the sleeping device
-	LinuxRawSocket raw_socket;
-	raw_socket.setOutputInterface(interface_name);
-	raw_socket.write(response_buffer, buf_size);
+        // Issue the response; this should cause the computer that queried for
+        // the sleeping device to believe this computer IS the sleeping device
+        LinuxRawSocket raw_socket;
+        raw_socket.setOutputInterface(interface_name);
+        raw_socket.write(response_buffer, buf_size);
       }
     }
   }
   // Does this frame contain an IPv4 packet?
-  else if (memcmp(eth_frame->ethertype,
-		  (void*)ipv4_type,
-		  2) == 0)
+  else if (memcmp(eth_frame->ethertype, (void*)ipv4_type, 2) == 0)
   {
     // Consider this packet as an IPv4 packet
     ipv4_header* ipv4_hdr =
@@ -920,92 +897,88 @@ void handle_frame(const char* frame_buffer, unsigned int bytes_read)
     for(unsigned int i = 0; i < devices.size(); i++)
     {
       // Compare to current device
-      if (memcmp(ipv4_hdr->destination_ip,
-		 devices[i].ip_address,
-		 4) == 0)
+      if (memcmp(ipv4_hdr->destination_ip, devices[i].ip_address, 4) == 0)
       {
-	// Is the device sleeping?
-	if (devices[i].is_sleeping)
-	{
-	  // We've intercepted traffic for a sleeping device.  Now it needs to
-	  // be determined if this traffic is important.
+        // Is the device sleeping?
+        if (devices[i].is_sleeping)
+        {
+          // We've intercepted traffic for a sleeping device.  Now it needs to
+          // be determined if this traffic is important.
 
-	  // Consider only TCP and UDP
-	  if (*ipv4_hdr->protocol == 0x06 || *ipv4_hdr->protocol == 0x11)
-	  {
-	    // If this device has no important ports listed, wake it for any
-	    // traffic
-	    if (devices[i].ports.size() == 0)
-	    {  
-	      wake_device(i,
-			  eth_frame->mac_source,
-			  (unsigned char*)ipv4_hdr->source_ip);
-	    }
-	    else
-	    {
-	      // Figure out how long the header in this IPv4 packet is; we have
-	      // to do this to know where the payload starts, to know where to
-	      // pick the destination port from
+          // Consider only TCP and UDP
+          if (*ipv4_hdr->protocol == 0x06 || *ipv4_hdr->protocol == 0x11)
+          {
+            // If this device has no important ports listed, wake it for any
+            // traffic
+            if (devices[i].ports.size() == 0)
+            {
+              wake_device(i,
+                          eth_frame->mac_source,
+                          (unsigned char*)ipv4_hdr->source_ip);
+            }
+            else
+            {
+              // Figure out how long the header in this IPv4 packet is; we have
+              // to do this to know where the payload starts, to know where to
+              // pick the destination port from
 
-	      // The header length in the packet indicates the number of 32-bit
-	      // words, so the multiply by 4 is necessary to convert to bytes
-	      unsigned short ipv4_headerlen =
-		(*(ipv4_hdr->version_headerlen) & 0x0f) * 4;
+              // The header length in the packet indicates the number of 32-bit
+              // words, so the multiply by 4 is necessary to convert to bytes
+              unsigned short ipv4_headerlen =
+                (*(ipv4_hdr->version_headerlen) & 0x0f) * 4;
 
-	      // Save a pointer to the start of the IPv4 payload
-	      const unsigned char* ipv4_payload =
-		reinterpret_cast<const unsigned char*>(
+              // Save a pointer to the start of the IPv4 payload
+              const unsigned char* ipv4_payload =
+                reinterpret_cast<const unsigned char*>(
                   frame_buffer + sizeof(ethernet_ii_header) + ipv4_headerlen);
 
-	      // Extract the destination port
-	      unsigned short destination_port =
-		*(unsigned short*)(ipv4_payload + 2);
+              // Extract the destination port
+              unsigned short destination_port =
+                *(unsigned short*)(ipv4_payload + 2);
 
-	      // Byte-swap the retrieved port if the endian-ness of this host
-	      // doesn't match network byte order
-	      if(!is_big_endian)
-	      {
-		// Copy the port's two bytes
-		unsigned char byte1 =
-		  *(unsigned char*)&destination_port;
-		unsigned char byte2 =
-		  *((unsigned char*)&destination_port + 1);
+              // Byte-swap the retrieved port if the endian-ness of this host
+              // doesn't match network byte order
+              if(!is_big_endian)
+              {
+                // Copy the port's two bytes
+                unsigned char byte1 = *(unsigned char*)&destination_port;
+                unsigned char byte2 = *((unsigned char*)&destination_port + 1);
 
-		// Copy the two bytes back in, in reverse order
-		memcpy((unsigned char*)&destination_port,     &byte2, 1);
-		memcpy((unsigned char*)&destination_port + 1, &byte1, 1);
-	      }
+                // Copy the two bytes back in, in reverse order
+                memcpy((unsigned char*)&destination_port,     &byte2, 1);
+                memcpy((unsigned char*)&destination_port + 1, &byte1, 1);
+              }
 
-	      // Loop over all this device's listed important ports, seeing if
-	      // any of them match the port to which this packet is destined
-	      for (std::vector<unsigned short>::iterator iter =
-		     devices[i].ports.begin();
-		   iter != devices[i].ports.end();
-		   iter++)
-	      {
-		// If the packet is destined for an important port, wake the
-		// device
-		if (*iter == destination_port)
-		{
-		  wake_device(i,
-			      eth_frame->mac_source,
-			      (unsigned char*)ipv4_hdr->source_ip);
-		  break;
-		}
-	      }
-	    }
-	  }
-	}
-	else
-	{
-	  // We've intercepted traffic for a device that is awake.  This means
-	  // the device that sent this traffic still believes it should send
-	  // data to the proxy, when it should be sending data to its intended
-	  // destination.  Attempt to remedy this situation by broadcasting a
-	  // gratuitous ARP that should inform the sender of who they should
-	  // really be sending to.
-	  restore_arp_tables(i, eth_frame->mac_source);
-	}
+              // Loop over all this device's listed important ports, seeing if
+              // any of them match the port to which this packet is destined
+              for (std::vector<unsigned short>::iterator iter =
+                     devices[i].ports.begin();
+                   iter != devices[i].ports.end();
+                   iter++)
+              {
+                // If the packet is destined for an important port, wake the
+                // device
+                if (*iter == destination_port)
+                {
+                  wake_device(i,
+                              eth_frame->mac_source,
+                              (unsigned char*)ipv4_hdr->source_ip);
+                  break;
+                }
+              }
+            }
+          }
+        }
+        else
+        {
+          // We've intercepted traffic for a device that is awake.  This means
+          // the device that sent this traffic still believes it should send
+          // data to the proxy, when it should be sending data to its intended
+          // destination.  Attempt to remedy this situation by broadcasting a
+          // gratuitous ARP that should inform the sender of who they should
+          // really be sending to.
+          restore_arp_tables(i, eth_frame->mac_source);
+        }
       }
     }
   }
@@ -1031,12 +1004,12 @@ void set_sleep_status()
 
       // Since this device is now asleep, this proxy should intercept all
       // traffic bound for it.  To accomplish this, a single gratuitous ARP
-      // associating this proxy device's MAC with the IP address of the
-      // device that has just fallen asleep can be issued.
+      // associating this proxy device's MAC with the IP address of the device
+      // that has just fallen asleep can be issued.
       if (aggressive_garp)
       {
-	log_issuing_garp(devices[i].ip_address, (const unsigned char*)own_mac);
-	send_garp(devices[i].ip_address, (const unsigned char*)own_mac);
+        log_issuing_garp(devices[i].ip_address, (const unsigned char*)own_mac);
+        send_garp(devices[i].ip_address, (const unsigned char*)own_mac);
       }
     }
 
@@ -1068,10 +1041,10 @@ void issue_sleep_checks()
     // Update buffer with current device's IP and MAC
     memcpy(arp_req_arp->tha, devices[i].mac_address, 6);
     memcpy(arp_req_arp->tpa, devices[i].ip_address,  4);
- 
+
     // Issue the request
     query_socket.write((const char*)arp_request,
-		       sizeof(ethernet_ii_header) + sizeof(arp_ipv4));
+                       sizeof(ethernet_ii_header) + sizeof(arp_ipv4));
   }
 }
 
