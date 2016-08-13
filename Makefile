@@ -16,5 +16,8 @@ toolbox/libtoolbox.a
 sproxy: $(SRC) $(INC) $(LIB)
 	@g++ -I. -Itoolbox/networking -Itoolbox/misc -Wall -g2 -o $@ $(SRC) $(LIB)
 
+toolbox/libtoolbox.a:
+	@make -C toolbox
+
 clean:
 	@rm -rf sproxy
