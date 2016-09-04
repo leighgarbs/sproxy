@@ -83,6 +83,9 @@ bool is_big_endian;
 // Used to log important sproxy activities
 Log log;
 
+// Log messages go out on this stream
+std::ofstream log_stream;
+
 
 // THESE CONFIGURATION VARIABLES ARE SET BASED ON THE DEFAULT FILE AND/OR
 // PROGRAM ARGUMENTS
@@ -114,12 +117,37 @@ bool aggressive_garp = true;
 
 
 //=============================================================================
+// Closes the log file; used before log rotation and on shutdown
+//=============================================================================
+void close_log(int)
+{
+    log.write("Closing log file");
+    log_stream.close();
+}
+
+//=============================================================================
+// Opens the log file; used after log rotation and during startup
+//=============================================================================
+void open_log(int)
+{
+    log_stream.open(log_filename.c_str(), std::ofstream::app);
+
+    log.setOutputStream(log_stream);
+    log.flushAfterWrite(true);
+    log.useLocalTime();
+
+    log.write("Log file open");
+}
+
+//=============================================================================
 // Performs any clean up that must be done before the program halts
 //=============================================================================
 void clean_exit(int unused)
 {
   // Log that the service is stopping
   log.write("Service stopping");
+
+  close_log(0);
 
   // Delete the PID file
   unlink(pid_filename.c_str());
@@ -1084,9 +1112,13 @@ void issue_sleep_checks()
 //=============================================================================
 int main(int argc, char** argv)
 {
+  struct sigaction act;
+  act.sa_handler = clean_exit;
+  act.sa_flags = 0;
+
   // Attach clean_exit to the interrupt signal; users can hit Ctrl+c and stop
   // the program
-  if (signal(SIGINT, clean_exit) == SIG_ERR)
+  if (sigaction(SIGINT, &act, 0) == -1)
   {
     fprintf(stderr, "Could not attach SIGINT handler\n");
     return 1;
@@ -1094,11 +1126,26 @@ int main(int argc, char** argv)
 
   // Attach clean_exit to the terminate signal; kill should work with no
   // arguments
-  if (signal(SIGTERM, clean_exit) == SIG_ERR)
+  if (sigaction(SIGTERM, &act, 0) == -1)
   {
     fprintf(stderr, "Could not attach SIGTERM handler\n");
     return 1;
   }
+
+  act.sa_handler = close_log;
+  if (sigaction(SIGUSR1, &act, 0) == -1)
+  {
+    fprintf(stderr, "Could not attach SIGUSR1 handler\n");
+    return 1;
+  }
+
+  act.sa_handler = open_log;
+  if (sigaction(SIGUSR2, &act, 0) == -1)
+  {
+    fprintf(stderr, "Could not attach SIGUSR2 handler\n");
+    return 1;
+  }
+
 
   // Read configuration settings
   parse_default_file(default_filename);
@@ -1126,10 +1173,7 @@ int main(int argc, char** argv)
   parse_config_file(config_filename);
 
   // Initialize the output stream to be used for log file writing
-  std::ofstream log_stream(log_filename.c_str(), std::ofstream::app);
-  log.setOutputStream(log_stream);
-  log.flushAfterWrite(true);
-  log.useLocalTime();
+  open_log(0);
 
   // For some of the things this proxy will do, it needs to know the MAC address
   // and IP address of the interface it will be using.  Obtain this information
