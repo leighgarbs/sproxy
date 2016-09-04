@@ -1092,6 +1092,14 @@ int main(int argc, char** argv)
     return 1;
   }
 
+  // Attach clean_exit to the terminate signal; kill should work with no
+  // arguments
+  if (signal(SIGTERM, clean_exit) == SIG_ERR)
+  {
+    fprintf(stderr, "Could not attach SIGTERM handler\n");
+    return 1;
+  }
+
   // Read configuration settings
   parse_default_file(default_filename);
 
