@@ -96,6 +96,10 @@ std::string config_filename = "/etc/sproxy/devices";
 // Filename of the log file, typically located in /var/log
 std::string log_filename = "/var/log/sproxy.log";
 
+// Filename of the file in which PID is stored
+std::string pid_filename = "/var/run/sproxy.pid";
+
+
 // Whether or not this process should daemonize
 bool daemonize = false;
 
@@ -117,8 +121,24 @@ void clean_exit(int unused)
   // Log that the service is stopping
   log.write("Service stopping");
 
+  // Delete the PID file
+  unlink(pid_filename.c_str());
+
   // We're done, exit
   exit(0);
+}
+
+//=============================================================================
+// Writes the PID of the calling process to file
+//=============================================================================
+void write_pid_to_file(const std::string& pid_filename)
+{
+    // Get the PID
+    int pid = getpid();
+
+    std::ofstream out_stream(pid_filename.c_str());
+    out_stream << pid << "\n";
+    out_stream.close();
 }
 
 //=============================================================================
@@ -162,6 +182,13 @@ bool process_arguments(int argc, char** argv)
 
       interface_name = argv[arg];
     }
+    else if (strcmp("--pidfile", argv[arg]) == 0 && arg + 1 < argc)
+    {
+      arg++;
+
+      pid_filename = argv[arg];
+    }
+
   }
 
   // If execution reaches here there was an acceptable set of arguments provided
@@ -413,6 +440,10 @@ void parse_default_file(const std::string& filename)
     else if (left_side == "LOG_FILE")
     {
       log_filename = right_side;
+    }
+    else if (left_side == "PID_FILE")
+    {
+      pid_filename = right_side;
     }
     else if (left_side == "DAEMONIZE")
     {
@@ -1079,6 +1110,9 @@ int main(int argc, char** argv)
       exit(1);
     }
   }
+
+  // Write our PID to file
+  write_pid_to_file(pid_filename);
 
   // Initialize the list of devices we'll be proxying for
   parse_config_file(config_filename);
