@@ -5,7 +5,6 @@
 // recognize sleeping LAN devices and wake them if they have important traffic
 // inbound.
 
-
 #include <arpa/inet.h>
 #include <csignal>
 #include <cstdio>
@@ -29,10 +28,8 @@
 #include "ipv4_header.h"
 #include "tcp_header.h"
 
-
 // Length of the input buffers used during config and default file parsing
 #define PARSING_BUFFER_LENGTH 1000
-
 
 // Filename of the default settings file, typically located in /etc/default
 std::string default_filename = "/etc/sproxy/config";
@@ -86,7 +83,6 @@ Log log;
 // Log messages go out on this stream
 std::ofstream log_stream;
 
-
 // THESE CONFIGURATION VARIABLES ARE SET BASED ON THE DEFAULT FILE AND/OR
 // PROGRAM ARGUMENTS
 
@@ -114,7 +110,6 @@ unsigned int device_response_grace_period = 1;
 
 // Aggressively keep the network up to date on changing ARP status?
 bool aggressive_garp = true;
-
 
 //=============================================================================
 // Closes the log file; used before log rotation and on shutdown
@@ -838,14 +833,12 @@ void handle_frame(const char* frame_buffer, unsigned int bytes_read)
   // Interpret this frame as an Ethernet II frame
   ethernet_ii_header* eth_frame  = (ethernet_ii_header*)frame_buffer;
 
-
   // Drop this frame if it came from the interface the proxy device is using (if
   // it came from ourselves).  Clearly we're not interested in these.
   if (memcmp((void*)eth_frame->mac_source, own_mac, 6) == 0)
   {
     return;
   }
-
 
   // First, check the source of the frame.  If it came from from a device
   // thought to be sleeping, change it's status to non-sleeping.
@@ -874,7 +867,6 @@ void handle_frame(const char* frame_buffer, unsigned int bytes_read)
       devices[i].is_awake = true;
     }
   }
-
 
   // Initially interpret frame's contents as an IPv4 ARP packet; later different
   // re-interpretations may be applied as necessary
@@ -1145,7 +1137,6 @@ int main(int argc, char** argv)
     fprintf(stderr, "Could not attach SIGUSR2 handler\n");
     return 1;
   }
-
 
   // Read configuration settings
   parse_default_file(default_filename);
