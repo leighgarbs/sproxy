@@ -1,4 +1,4 @@
-project(netsuspend)
+project(sproxy)
 cmake_minimum_required(VERSION 3.5)
 
 # Flags used for all builds
@@ -23,9 +23,9 @@ elseif(WIN32)
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${COMMON_WINDOWS_FLAGS}")
 endif(LINUX)
 
-add_executable(netsuspend netsuspend.cpp)
+add_executable(sproxy sproxy.cpp)
 
 add_subdirectory(toolbox)
-target_link_libraries(netsuspend toolbox)
+target_link_libraries(sproxy toolbox)
 
 include_directories(toolbox toolbox/networking)
