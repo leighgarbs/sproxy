@@ -18,6 +18,7 @@ build:
   #   - apt update && apt -y install make autoconf
 
   script:
+    - ./prebuild --release
     - make
 
   # depending on your build setup it's most likely a good idea to cache outputs
