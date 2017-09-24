@@ -5,8 +5,8 @@ cmake_minimum_required(VERSION 3.5)
 set(COMMON_FLAGS "-Wall")
 
 # Flags used for all builds on specific platforms
-set(COMMON_LINUX_FLAGS "-DLINUX")
-set(COMMON_WINDOWS_FLAGS "-DWINDOWS")
+set(COMMON_LINUX_FLAGS "-DLINUX ${COMMON_FLAGS}")
+set(COMMON_WINDOWS_FLAGS "-DWINDOWS ${COMMON_FLAGS}")
 
 # Generate the LINUX variable
 if(UNIX AND NOT APPLE)
