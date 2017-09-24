@@ -1,12 +1,17 @@
 project(sproxy)
 cmake_minimum_required(VERSION 3.5)
 
+# This project depends on the project in the toolbox subdirectory
+add_subdirectory(toolbox)
+
 # Flags used for all builds
-set(COMMON_FLAGS "-Wall")
+set(${PROJECT_NAME}_COMMON_FLAGS "-Wall")
 
 # Flags used for all builds on specific platforms
-set(COMMON_LINUX_FLAGS "-DLINUX ${COMMON_FLAGS}")
-set(COMMON_WINDOWS_FLAGS "-DWINDOWS ${COMMON_FLAGS}")
+set(${PROJECT_NAME}_COMMON_LINUX_FLAGS
+  "-DLINUX ${${PROJECT_NAME}_COMMON_FLAGS}")
+set(${PROJECT_NAME}_COMMON_WINDOWS_FLAGS
+  "-DWINDOWS ${${PROJECT_NAME}_COMMON_FLAGS}")
 
 # Generate the LINUX variable
 if(UNIX AND NOT APPLE)
@@ -16,16 +21,23 @@ else(UNIX AND NOT APPLE)
 endif(UNIX AND NOT APPLE)
 
 if(LINUX)
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${COMMON_LINUX_FLAGS}")
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${COMMON_LINUX_FLAGS}")
+  set(CMAKE_CXX_FLAGS_DEBUG
+    "${CMAKE_CXX_FLAGS_DEBUG} ${${PROJECT_NAME}_COMMON_LINUX_FLAGS}")
+  set(CMAKE_CXX_FLAGS_RELEASE
+    "${CMAKE_CXX_FLAGS_RELEASE} ${${PROJECT_NAME}_COMMON_LINUX_FLAGS}")
 elseif(WIN32)
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${COMMON_WINDOWS_FLAGS}")
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${COMMON_WINDOWS_FLAGS}")
+  set(CMAKE_CXX_FLAGS_DEBUG
+    "${CMAKE_CXX_FLAGS_DEBUG} ${${PROJECT_NAME}_COMMON_WINDOWS_FLAGS}")
+  set(CMAKE_CXX_FLAGS_RELEASE
+    "${CMAKE_CXX_FLAGS_RELEASE} ${${PROJECT_NAME}_COMMON_WINDOWS_FLAGS}")
 endif(LINUX)
 
-add_executable(sproxy sproxy.cpp)
+# This project outputs this executable
+add_executable(${PROJECT_NAME} sproxy.cpp)
 
-add_subdirectory(toolbox)
-target_link_libraries(sproxy toolbox)
+# We need to link toolbox
+target_link_libraries(${PROJECT_NAME} toolbox)
 
-include_directories(toolbox toolbox/networking)
+# Include toolbox headers
+target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE
+  toolbox toolbox/networking)
