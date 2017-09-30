@@ -1,5 +1,8 @@
 project(sproxy)
-cmake_minimum_required(VERSION 3.5)
+
+# CMake 2.6 is the oldest version of CMake that still has documentation
+# available online
+cmake_minimum_required(VERSION 2.6)
 
 # This project depends on the project in the toolbox subdirectory
 add_subdirectory(toolbox)
