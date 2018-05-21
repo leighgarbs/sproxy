@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 2.6)
 add_subdirectory(toolbox)
 
 # Include common project setup
-include(${CMAKE_CURRENT_LIST_DIR}/cmake/ProjectCommon.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/common/ProjectCommon.cmake)
 
 # This project outputs this executable
 add_executable(${PROJECT_NAME} sproxy.cpp)
