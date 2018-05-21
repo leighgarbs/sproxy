@@ -4,6 +4,7 @@
 # see https://hub.docker.com/_/gcc/
 
 variables:
+  GIT_STRATEGY: clone
   GIT_SUBMODULE_STRATEGY: recursive
 
 #image: gcc
@@ -12,9 +13,9 @@ build:
 
   stage: build
 
-  # instead of calling g++ directly you can also use some build toolkit like make
-  # install the necessary build tools when needed
-  # before_script:
+  #instead of calling g++ directly you can also use some build toolkit like make
+  #install the necessary build tools when needed
+  #before_script:
   #   - apt update && apt -y install make autoconf
 
   script:
