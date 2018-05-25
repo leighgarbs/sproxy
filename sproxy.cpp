@@ -1008,7 +1008,7 @@ void handle_frame(const char* frame_buffer, unsigned int bytes_read)
               for (std::vector<unsigned short>::iterator iter =
                      devices[i].ports.begin();
                    iter != devices[i].ports.end();
-                   iter++)
+                   ++iter)
               {
                 // If the packet is destined for an important port, wake the
                 // device
