@@ -258,6 +258,9 @@ void obtain_own_mac_and_ip()
   // Initialize own IP address
   sockaddr_in* temp_addr = (sockaddr_in*)&iface.ifr_addr;
   memcpy(own_ip, (const void*)(&(temp_addr->sin_addr.s_addr)), 4);
+
+  // Not needed anymore; return code not useful enough to bother with
+  close(sock_fd);
 }
 
 //=============================================================================
