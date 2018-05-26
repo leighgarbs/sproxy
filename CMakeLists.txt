@@ -11,11 +11,11 @@ add_subdirectory(toolbox)
 include(${CMAKE_CURRENT_LIST_DIR}/common/ProjectCommon.cmake)
 
 # This project outputs this executable
-add_executable(${PROJECT_NAME} sproxy.cpp)
+add_executable(${PROJECT_NAME} main.cpp SleepProxy.cpp)
 
 # We need to link toolbox
 target_link_libraries(${PROJECT_NAME} toolbox)
 
 # Include toolbox headers
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE
-  toolbox toolbox/networking)
+  . toolbox toolbox/networking)
