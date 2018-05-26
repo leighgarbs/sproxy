@@ -1,7 +1,7 @@
 #if !defined SLEEP_PROXY_HPP
 #define SLEEP_PROXY_HPP
 
-#include <ofstream>
+#include <fstream>
 #include <string>
 #include <vector>
 

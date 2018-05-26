@@ -30,7 +30,7 @@
 #include "ipv4_header.h"
 #include "tcp_header.h"
 
-static const unsigned int SleepProxy::PARSING_BUFFER_LENGTH = 1000;
+const unsigned int SleepProxy::PARSING_BUFFER_LENGTH = 1000;
 
 //=============================================================================
 //
