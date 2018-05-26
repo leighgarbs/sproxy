@@ -258,6 +258,9 @@ void obtain_own_mac_and_ip()
   // Initialize own IP address
   sockaddr_in* temp_addr = (sockaddr_in*)&iface.ifr_addr;
   memcpy(own_ip, (const void*)(&(temp_addr->sin_addr.s_addr)), 4);
+
+  // Not needed anymore; return code not useful enough to bother with
+  close(sock_fd);
 }
 
 //=============================================================================
@@ -1005,7 +1008,7 @@ void handle_frame(const char* frame_buffer, unsigned int bytes_read)
               for (std::vector<unsigned short>::iterator iter =
                      devices[i].ports.begin();
                    iter != devices[i].ports.end();
-                   iter++)
+                   ++iter)
               {
                 // If the packet is destined for an important port, wake the
                 // device
@@ -1198,14 +1201,8 @@ int main(int argc, char** argv)
   timeval current_time;
   gettimeofday(&current_time, 0);
 
-  // Tracks the amount of time that's passed since the last sleep check
-  double time_waiting = 0.0;
-
   // True when a sleep check is in progress.
   bool sleep_check_in_progress = false;
-
-  // Stores how many bytes were read from sniff_socket each sniff
-  int bytes_read = 0;
 
   // Sniffed frames are read into this buffer
   char frame_buffer[ETH_FRAME_LEN];
@@ -1217,7 +1214,7 @@ int main(int argc, char** argv)
   while(1)
   {
     // Sniff a packet, if any are there
-    bytes_read = sniff_socket.read(frame_buffer, ETH_FRAME_LEN);
+    int bytes_read = sniff_socket.read(frame_buffer, ETH_FRAME_LEN);
 
     // If anything was sniffed, handle it
     if (bytes_read > 0)
@@ -1229,7 +1226,7 @@ int main(int argc, char** argv)
     gettimeofday(&current_time, 0);
 
     // How much time has passed since the last sleep check?
-    time_waiting = get_time(current_time) - get_time(last_sleep_check);
+    double time_waiting = get_time(current_time) - get_time(last_sleep_check);
 
     // Is it time to perform another sleep check?
     if (time_waiting > device_check_period)
