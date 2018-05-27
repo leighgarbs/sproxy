@@ -2,10 +2,12 @@
 #define SLEEP_PROXY_HPP
 
 #include <fstream>
+#include <linux/if_ether.h>
 #include <string>
 #include <vector>
 
 #include "Device.hpp"
+#include "LinuxRawSocket.hpp"
 #include "Log.hpp"
 #include "arp_ipv4.h"
 #include "ethernet_ii_header.h"
@@ -14,7 +16,7 @@ class SleepProxy
 {
 public:
 
-    SleepProxy();
+    SleepProxy(int argc, char** argv);
 
     ~SleepProxy();
 
@@ -81,6 +83,11 @@ private:
 
     void issue_sleep_checks();
 
+
+    LinuxRawSocket sniff_socket;
+
+    // Sniffed frames are read into this buffer
+    char frame_buffer[ETH_FRAME_LEN];
 
     // Length of the input buffers used during config and default file parsing
     static const unsigned int PARSING_BUFFER_LENGTH;

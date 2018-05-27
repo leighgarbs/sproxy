@@ -35,7 +35,7 @@ const unsigned int SleepProxy::PARSING_BUFFER_LENGTH = 1000;
 //=============================================================================
 //
 //=============================================================================
-SleepProxy::SleepProxy() :
+SleepProxy::SleepProxy(int argc, char** argv) :
     default_filename("/etc/sproxy/config"),
     is_big_endian(false),
     interface_name("eth0"),
@@ -56,7 +56,7 @@ SleepProxy::SleepProxy() :
     if (sigaction(SIGINT, &act, 0) == -1)
     {
         fprintf(stderr, "Could not attach SIGINT handler\n");
-        return 1;
+        return;
     }
 
     // Attach clean_exit to the terminate signal; kill should work with no
@@ -64,21 +64,21 @@ SleepProxy::SleepProxy() :
     if (sigaction(SIGTERM, &act, 0) == -1)
     {
         fprintf(stderr, "Could not attach SIGTERM handler\n");
-        return 1;
+        return;
     }
 
     act.sa_handler = close_log;
     if (sigaction(SIGUSR1, &act, 0) == -1)
     {
         fprintf(stderr, "Could not attach SIGUSR1 handler\n");
-        return 1;
+        return;
     }
 
     act.sa_handler = open_log;
     if (sigaction(SIGUSR2, &act, 0) == -1)
     {
         fprintf(stderr, "Could not attach SIGUSR2 handler\n");
-        return 1;
+        return;
     }
 
     // Read configuration settings
@@ -89,15 +89,6 @@ SleepProxy::SleepProxy() :
     {
         // TODO: show a help message here
         exit(1);
-    }
-
-    // If this process is to daemonize then do it
-    if (daemonize)
-    {
-        if (daemon(0, 0) != 0)
-        {
-            exit(1);
-        }
     }
 
     // Write our PID to file
@@ -122,7 +113,6 @@ SleepProxy::SleepProxy() :
     initialize_arp_request();
 
     // Create the socket that will sniff frames
-    LinuxRawSocket sniff_socket;
     sniff_socket.setInputInterface(interface_name);
     sniff_socket.enableBlocking();
     sniff_socket.setBlockingTimeout(0.1);
@@ -143,9 +133,6 @@ SleepProxy::SleepProxy() :
 
     // True when a sleep check is in progress.
     bool sleep_check_in_progress = false;
-
-    // Sniffed frames are read into this buffer
-    char frame_buffer[ETH_FRAME_LEN];
 
     // Note that the service has started
     log.write("Service starting");
