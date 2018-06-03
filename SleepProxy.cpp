@@ -183,7 +183,7 @@ SleepProxy::~SleepProxy()
 //=============================================================================
 //
 //=============================================================================
-void SleepProxy::step()
+bool SleepProxy::step()
 {
     // Sniff a packet, if any are there
     int bytes_read = sniff_socket.read(frame_buffer, ETH_FRAME_LEN);
@@ -225,6 +225,9 @@ void SleepProxy::step()
         // Execution of this if ends the sleep check
         sleep_check_in_progress = false;
     }
+
+    // Never stop
+    return false;
 }
 
 //=============================================================================
