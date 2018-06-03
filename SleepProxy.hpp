@@ -156,6 +156,9 @@ private:
 
     // Aggressively keep the network up to date on changing ARP status?
     bool aggressive_garp;
+
+    // True when a sleep check is in progress.
+    bool sleep_check_in_progress;
 };
 
 #endif

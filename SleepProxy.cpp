@@ -52,7 +52,8 @@ SleepProxy::SleepProxy(int argc, char** argv, double period_s) :
     daemonize(false),
     device_check_period(10),
     device_response_grace_period(1),
-    aggressive_garp(true)
+    aggressive_garp(true),
+    sleep_check_in_progress(false)
 {
     initialize();
 }
@@ -71,7 +72,8 @@ SleepProxy::SleepProxy(int argc, char** argv, const PosixTimespec& tp) :
     daemonize(false),
     device_check_period(10),
     device_response_grace_period(1),
-    aggressive_garp(true)
+    aggressive_garp(true),
+    sleep_check_in_progress(false)
 {
     initialize();
 }
@@ -164,9 +166,6 @@ void SleepProxy::initialize()
     // Marks the current time
     timeval current_time;
     gettimeofday(&current_time, 0);
-
-    // True when a sleep check is in progress.
-    bool sleep_check_in_progress = false;
 
     // Note that the service has started
     log.write("Service starting");
