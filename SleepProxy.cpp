@@ -12,7 +12,6 @@
 #include <cstring>
 #include <ctime>
 #include <fstream>
-#include <linux/if_ether.h>
 #include <net/if.h>
 #include <sstream>
 #include <string>
@@ -23,19 +22,27 @@
 
 #include "SleepProxy.hpp"
 
-#include "LinuxRawSocket.hpp"
 #include "Log.hpp"
+#include "PosixTimespec.hpp"
 #include "arp_ipv4.h"
 #include "ethernet_ii_header.h"
 #include "ipv4_header.h"
 #include "tcp_header.h"
+
+// This doesn't compile anywhere but Linux but here are the Linux-specific
+// headers anyway
+#if defined LINUX
+#include <linux/if_ether.h>
+#include "LinuxRawSocket.hpp"
+#endif
 
 const unsigned int SleepProxy::PARSING_BUFFER_LENGTH = 1000;
 
 //=============================================================================
 //
 //=============================================================================
-SleepProxy::SleepProxy(int argc, char** argv) :
+SleepProxy::SleepProxy(int argc, char** argv, double period_s) :
+    FixedRateProgram(argc, argv, period_s),
     default_filename("/etc/sproxy/config"),
     is_big_endian(false),
     interface_name("eth0"),
@@ -46,6 +53,33 @@ SleepProxy::SleepProxy(int argc, char** argv) :
     device_check_period(10),
     device_response_grace_period(1),
     aggressive_garp(true)
+{
+    initialize();
+}
+
+//=============================================================================
+//
+//=============================================================================
+SleepProxy::SleepProxy(int argc, char** argv, const PosixTimespec& tp) :
+    FixedRateProgram(argc, argv, tp),
+    default_filename("/etc/sproxy/config"),
+    is_big_endian(false),
+    interface_name("eth0"),
+    config_filename("/etc/sproxy/devices"),
+    log_filename("/var/log/sproxy.log"),
+    pid_filename("/var/run/sproxy.pid"),
+    daemonize(false),
+    device_check_period(10),
+    device_response_grace_period(1),
+    aggressive_garp(true)
+{
+    initialize();
+}
+
+//=============================================================================
+//
+//=============================================================================
+void SleepProxy::initialize()
 {
     struct sigaction act;
     act.sa_handler = clean_exit;

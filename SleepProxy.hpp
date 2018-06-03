@@ -2,27 +2,39 @@
 #define SLEEP_PROXY_HPP
 
 #include <fstream>
-#include <linux/if_ether.h>
 #include <string>
 #include <vector>
 
+#include "FixedRateProgram.hpp"
+
 #include "Device.hpp"
-#include "LinuxRawSocket.hpp"
 #include "Log.hpp"
+#include "PosixTimespec.hpp"
 #include "arp_ipv4.h"
 #include "ethernet_ii_header.h"
 
-class SleepProxy
+// This doesn't compile anywhere but Linux but here are the Linux-specific
+// headers anyway
+#if defined LINUX
+#include <linux/if_ether.h>
+#include "LinuxRawSocket.hpp"
+#endif
+
+class SleepProxy : public FixedRateProgram
 {
 public:
 
-    SleepProxy(int argc, char** argv);
+    SleepProxy(int argc, char** argv, double period_s);
 
-    ~SleepProxy();
+    SleepProxy(int argc, char** argv, const PosixTimespec& tp);
 
-    void step();
+    virtual ~SleepProxy();
+
+    virtual bool step();
 
 private:
+
+    void initialize();
 
     void close_log(int);
 
