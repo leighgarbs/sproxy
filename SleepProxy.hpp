@@ -32,19 +32,21 @@ public:
 
     virtual bool step();
 
+    virtual int signal(int sig);
+
 private:
 
     void initialize();
 
-    void close_log(int);
+    void closeLog();
 
-    void open_log(int);
+    void openLog();
 
-    void clean_exit(int unused);
+    void cleanExit();
 
-    void write_pid_to_file(const std::string& pid_filename);
+    void writePidToFile(const std::string& pid_filename);
 
-    bool process_arguments(int argc, char** argv);
+    bool processArguments();
 
     void obtain_own_mac_and_ip();
 
@@ -97,6 +99,8 @@ private:
 
 
     LinuxRawSocket sniff_socket;
+
+    PosixTimespec current_time;
 
     // Sniffed frames are read into this buffer
     char frame_buffer[ETH_FRAME_LEN];

@@ -13,6 +13,7 @@
 #include <ctime>
 #include <fstream>
 #include <net/if.h>
+#include <signal.h>
 #include <sstream>
 #include <string>
 #include <sys/ioctl.h>
@@ -83,11 +84,11 @@ SleepProxy::SleepProxy(int argc, char** argv, const PosixTimespec& tp) :
 //=============================================================================
 void SleepProxy::initialize()
 {
-    struct sigaction act;
-    act.sa_handler = clean_exit;
+/*    struct sigaction act;
+    act.sa_handler = cleanExit;
     act.sa_flags = 0;
 
-    // Attach clean_exit to the interrupt signal; users can hit Ctrl+c and stop
+    // Attach cleanExit to the interrupt signal; users can hit Ctrl+c and stop
     // the program
     if (sigaction(SIGINT, &act, 0) == -1)
     {
@@ -95,7 +96,7 @@ void SleepProxy::initialize()
         return;
     }
 
-    // Attach clean_exit to the terminate signal; kill should work with no
+    // Attach cleanExit to the terminate signal; kill should work with no
     // arguments
     if (sigaction(SIGTERM, &act, 0) == -1)
     {
@@ -103,38 +104,38 @@ void SleepProxy::initialize()
         return;
     }
 
-    act.sa_handler = close_log;
+    act.sa_handler = closeLog;
     if (sigaction(SIGUSR1, &act, 0) == -1)
     {
         fprintf(stderr, "Could not attach SIGUSR1 handler\n");
         return;
     }
 
-    act.sa_handler = open_log;
+    act.sa_handler = openLog;
     if (sigaction(SIGUSR2, &act, 0) == -1)
     {
         fprintf(stderr, "Could not attach SIGUSR2 handler\n");
         return;
     }
-
+*/
     // Read configuration settings
     parse_default_file(default_filename);
 
     // Process arguments
-    if (!process_arguments(argc, argv))
+    if (!processArguments())
     {
         // TODO: show a help message here
         exit(1);
     }
 
     // Write our PID to file
-    write_pid_to_file(pid_filename);
+    writePidToFile(pid_filename);
 
     // Initialize the list of devices we'll be proxying for
     parse_config_file(config_filename);
 
     // Initialize the output stream to be used for log file writing
-    open_log(0);
+    openLog();
 
     // For some of the things this proxy will do, it needs to know the MAC
     // address and IP address of the interface it will be using.  Obtain this
@@ -176,7 +177,7 @@ void SleepProxy::initialize()
 //=============================================================================
 SleepProxy::~SleepProxy()
 {
-    clean_exit(0);
+    cleanExit();
 }
 
 //=============================================================================
@@ -230,9 +231,33 @@ bool SleepProxy::step()
 }
 
 //=============================================================================
+//
+//=============================================================================
+int SleepProxy::signal(int sig)
+{
+    switch(sig)
+    {
+    case SIGINT:
+    case SIGTERM:
+        cleanExit();
+        break;
+
+    case SIGUSR1:
+        closeLog();
+        break;
+
+    case SIGUSR2:
+        openLog();
+        break;
+    }
+
+    return 0;
+}
+
+//=============================================================================
 // Closes the log file; used before log rotation and on shutdown
 //=============================================================================
-void SleepProxy::close_log(int)
+void SleepProxy::closeLog()
 {
     log.write("Closing log file");
     log_stream.close();
@@ -241,7 +266,7 @@ void SleepProxy::close_log(int)
 //=============================================================================
 // Opens the log file; used after log rotation and during startup
 //=============================================================================
-void SleepProxy::open_log(int)
+void SleepProxy::openLog()
 {
     log_stream.open(log_filename.c_str(), std::ofstream::app);
 
@@ -255,12 +280,12 @@ void SleepProxy::open_log(int)
 //=============================================================================
 // Performs any clean up that must be done before the program halts
 //=============================================================================
-void SleepProxy::clean_exit(int unused)
+void SleepProxy::cleanExit()
 {
     // Log that the service is stopping
     log.write("Service stopping");
 
-    close_log(0);
+    closeLog();
 
     // Delete the PID file
     unlink(pid_filename.c_str());
@@ -272,7 +297,7 @@ void SleepProxy::clean_exit(int unused)
 //=============================================================================
 // Writes the PID of the calling process to file
 //=============================================================================
-void SleepProxy::write_pid_to_file(const std::string& pid_filename)
+void SleepProxy::writePidToFile(const std::string& pid_filename)
 {
     // Get the PID
     int pid = getpid();
@@ -285,10 +310,19 @@ void SleepProxy::write_pid_to_file(const std::string& pid_filename)
 //=============================================================================
 // Processes program arguments
 //=============================================================================
-bool SleepProxy::process_arguments(int argc, char** argv)
+bool SleepProxy::processArguments()
 {
+    std::vector<std::string> program_arguments;
+    getProgramArguments(program_arguments);
+
+    for (std::vector<std::string>::const_iterator i = program_arguments.begin();
+         i != program_arguments.end();
+         ++i)
+    {
+    }
+
     // Loop over all the arguments, and process them
-    for (int arg = 1; arg < argc; arg++)
+/*    for (int arg = 1; arg < argc; arg++)
     {
         // Argument -c specifies the config file filename
         if (strcmp("-c", argv[arg]) == 0 && arg + 1 < argc)
@@ -329,7 +363,7 @@ bool SleepProxy::process_arguments(int argc, char** argv)
 
             pid_filename = argv[arg];
         }
-    }
+        }*/
 
     // If execution reaches here there was an acceptable set of arguments
     // provided
@@ -347,7 +381,7 @@ void SleepProxy::obtain_own_mac_and_ip()
     {
         // If something goes wrong, print an error message and quit
         perror(0);
-        clean_exit(0);
+        cleanExit();
     }
 
     // Fill out an ifreq with name of the target interface
@@ -359,7 +393,7 @@ void SleepProxy::obtain_own_mac_and_ip()
     {
         // If something goes wrong, print an error message and quit
         perror(0);
-        clean_exit(0);
+        cleanExit();
     }
 
     // Initialize own_mac
@@ -370,7 +404,7 @@ void SleepProxy::obtain_own_mac_and_ip()
     {
         // If something goes wrong, print an error message and quit
         perror(0);
-        clean_exit(0);
+        cleanExit();
     }
 
     // Initialize own IP address
@@ -673,7 +707,7 @@ void SleepProxy::parse_config_file(const std::string& filename)
             std::cerr << "Error in " << filename << "\n"
                       << "Could not parse MAC address on line " << line_number
                       << "\n";
-            clean_exit(0);
+            cleanExit();
         }
 
         // Now that we know we have a new device to monitor, push a new Device onto
@@ -696,7 +730,7 @@ void SleepProxy::parse_config_file(const std::string& filename)
             std::cerr << "Error in " << filename << "\n"
                       << "Could not parse MAC address on line " << line_number
                       << "\n";
-            clean_exit(0);
+            cleanExit();
         }
 
         // Copy from temporary storage into permanent storage
@@ -718,7 +752,7 @@ void SleepProxy::parse_config_file(const std::string& filename)
         {
             // If the IP parsing failed, tell the user why and exit
             std::cerr << "Could not parse IP address on line " << line_number << "\n";
-            clean_exit(0);
+            cleanExit();
         }
 
         // Copy from temporary storage into permanent storage
@@ -748,7 +782,7 @@ void SleepProxy::parse_config_file(const std::string& filename)
             {
                 // If something else went wrong, inform the user and quit
                 std::cerr << "Unable to parse port on line " << line_number << "\n";
-                clean_exit(0);
+                cleanExit();
             }
 
             // Add the port to the device's list
