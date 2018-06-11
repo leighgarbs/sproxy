@@ -99,6 +99,8 @@ private:
 
     PosixTimespec frame_start;
     PosixTimespec last_sleep_check;
+    PosixTimespec sleep_check_period;
+    PosixTimespec sleep_check_response_grace_period;
 
     // Sniffed frames are read into this buffer
     char frame_buffer[ETH_FRAME_LEN];
@@ -150,11 +152,7 @@ private:
     // Whether or not this process should daemonize
     bool daemonize;
 
-    // Length of time between device checks
-    unsigned int device_check_period;
-
     // How long to wait for responses from monitored devices after querying them
-    unsigned int device_response_grace_period;
 
     // Aggressively keep the network up to date on changing ARP status?
     bool aggressive_garp;

@@ -44,6 +44,8 @@ const unsigned int SleepProxy::PARSING_BUFFER_LENGTH = 1000;
 //=============================================================================
 SleepProxy::SleepProxy(int argc, char** argv, const PosixTimespec& tp) :
     FixedRateProgram(argc, argv, tp),
+    sleep_check_period(10),
+    sleep_check_response_grace_period(1),
     default_filename("/etc/sproxy/config"),
     is_big_endian(false),
     interface_name("eth0"),
@@ -51,8 +53,6 @@ SleepProxy::SleepProxy(int argc, char** argv, const PosixTimespec& tp) :
     log_filename("/var/log/sproxy.log"),
     pid_filename("/var/run/sproxy.pid"),
     daemonize(false),
-    device_check_period(10),
-    device_response_grace_period(1),
     aggressive_garp(true),
     sleep_check_in_progress(false)
 {
@@ -154,8 +154,37 @@ void SleepProxy::step()
     // Grab the current time
     getFrameStart(frame_start);
 
-    int bytes_read = 0;
+    // How much time has passed since the last sleep check?
+    PosixTimespec time_since_lsc = frame_start - last_sleep_check;
 
+    // Is it time to perform another sleep check?
+    if (time_since_lsc >= sleep_check_period)
+    {
+        // Okay, we need to do a sleep check then
+
+        // Reset sleep check timers
+        last_sleep_check = frame_start;
+        time_since_lsc = 0;
+
+        // Note that a sleep check is in progress
+        sleep_check_in_progress = true;
+
+        // Issue the messages checking all monitored devices for sleep status
+        issue_sleep_checks();
+    }
+
+    // Is it time to see if devices have responded to the sleep check?
+    if (sleep_check_in_progress &&
+        time_since_lsc > sleep_check_response_grace_period)
+    {
+        // Set the sleep status of all monitored devices
+        set_sleep_status();
+
+        // Sleep check is over
+        sleep_check_in_progress = false;
+    }
+
+    int bytes_read = 0;
     do
     {
         // Try to sniff a frame
@@ -168,35 +197,6 @@ void SleepProxy::step()
         }
     }
     while (bytes_read > 0);
-
-    // How much time has passed since the last sleep check?
-    PosixTimespec time_waiting = frame_start - last_sleep_check;
-
-    // Is it time to perform another sleep check?
-    if (time_waiting >= device_check_period)
-    {
-        // Save this time as the last time a sleep check was done
-        last_sleep_check = frame_start;
-
-        // We are now checking for sleep, so reset time_waiting
-        time_waiting = 0.0;
-
-        // Issue the messages checking all monitored devices for sleep status
-        issue_sleep_checks();
-
-        // Note that a sleep check is in progress
-        sleep_check_in_progress = true;
-    }
-
-    // Is it time to see if devices have responded to the sleep check?
-    if (sleep_check_in_progress && time_waiting > device_response_grace_period)
-    {
-        // Set the sleep status of all monitored devices
-        set_sleep_status();
-
-        // Execution of this if ends the sleep check
-        sleep_check_in_progress = false;
-    }
 }
 
 //=============================================================================
@@ -249,7 +249,7 @@ void SleepProxy::openLog()
 }
 
 //=============================================================================
-// Performs any clean up that must be done before the program halts
+// Clean up that should be done before the program halts
 //=============================================================================
 void SleepProxy::cleanExit()
 {
@@ -292,7 +292,7 @@ bool SleepProxy::processArguments()
     {
     }
 
-    // Loop over all the arguments, and process them
+    // Loop over all thxe arguments, and process them
 /*    for (int arg = 1; arg < argc; arg++)
     {
         // Argument -c specifies the config file filename
@@ -598,18 +598,18 @@ void SleepProxy::parse_default_file(const std::string& filename)
         {
             daemonize = right_side == "yes";
         }
-        else if (left_side == "DEVICE_CHECK_PERIOD")
+        else if (left_side == "SLEEP_CHECK_PERIOD")
         {
             // Convert the right side to a number, that's what it's supposed to be
             convert_to_number.clear();
             convert_to_number.str(right_side);
-            convert_to_number >> device_check_period;
+            convert_to_number >> sleep_check_period;
         }
-        else if (left_side == "DEVICE_RESPONSE_GRACE_PERIOD")
+        else if (left_side == "SLEEP_CHECK_RESPONSE_GRACE_PERIOD")
         {
             convert_to_number.clear();
             convert_to_number.str(right_side);
-            convert_to_number >> device_response_grace_period;
+            convert_to_number >> sleep_check_response_grace_period;
         }
         else if (left_side == "AGGRESSIVE_GARP")
         {
