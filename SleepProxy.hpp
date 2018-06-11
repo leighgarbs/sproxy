@@ -30,6 +30,7 @@ public:
 
     virtual void step();
 
+    // Signal event handlers
     virtual int signal(int sig);
 
 private:
@@ -96,7 +97,8 @@ private:
 
     LinuxRawSocket sniff_socket;
 
-    PosixTimespec current_time;
+    PosixTimespec frame_start;
+    PosixTimespec last_sleep_check;
 
     // Sniffed frames are read into this buffer
     char frame_buffer[ETH_FRAME_LEN];

@@ -123,22 +123,16 @@ SleepProxy::SleepProxy(int argc, char** argv, const PosixTimespec& tp) :
 
     // Create the socket that will sniff frames
     sniff_socket.setInputInterface(interface_name);
-    sniff_socket.enableBlocking();
-    sniff_socket.setBlockingTimeout(0.1);
+    sniff_socket.disableBlocking();
 
     // Initialize some time-related variables used in the main loop to determine
     // when sleep checks are performed.  These are all initialized to the
     // current time, since there's no better time to initialize them to, and it
     // makes the main loop below work on the first pass
 
-    // Marks the last time a sleep check was performed
-    timeval last_sleep_check;
-    last_sleep_check.tv_sec  = 0;
-    last_sleep_check.tv_usec = 0;
-
     // Marks the current time
-    timeval current_time;
-    gettimeofday(&current_time, 0);
+    //timeval current_time;
+    //gettimeofday(&current_time, 0);
 
     // Note that the service has started
     log.write("Service starting");
@@ -157,26 +151,32 @@ SleepProxy::~SleepProxy()
 //=============================================================================
 void SleepProxy::step()
 {
-    // Sniff a packet, if any are there
-    int bytes_read = sniff_socket.read(frame_buffer, ETH_FRAME_LEN);
+    // Grab the current time
+    getFrameStart(frame_start);
 
-    // If anything was sniffed, handle it
-    if (bytes_read > 0)
+    int bytes_read = 0;
+
+    do
     {
-        handle_frame(frame_buffer, bytes_read);
-    }
+        // Try to sniff a frame
+        bytes_read = sniff_socket.read(frame_buffer, ETH_FRAME_LEN);
 
-    // Get the current time
-    gettimeofday(&current_time, 0);
+        // If anything was sniffed, handle it
+        if (bytes_read > 0)
+        {
+            handle_frame(frame_buffer, bytes_read);
+        }
+    }
+    while (bytes_read > 0);
 
     // How much time has passed since the last sleep check?
-    double time_waiting = get_time(current_time) - get_time(last_sleep_check);
+    PosixTimespec time_waiting = frame_start - last_sleep_check;
 
     // Is it time to perform another sleep check?
-    if (time_waiting > device_check_period)
+    if (time_waiting >= device_check_period)
     {
         // Save this time as the last time a sleep check was done
-        memcpy(&last_sleep_check, &current_time, sizeof(timeval));
+        last_sleep_check = frame_start;
 
         // We are now checking for sleep, so reset time_waiting
         time_waiting = 0.0;
@@ -197,13 +197,10 @@ void SleepProxy::step()
         // Execution of this if ends the sleep check
         sleep_check_in_progress = false;
     }
-
-    // Never stop
-    return false;
 }
 
 //=============================================================================
-//
+// Signal event handlers
 //=============================================================================
 int SleepProxy::signal(int sig)
 {
@@ -215,10 +212,12 @@ int SleepProxy::signal(int sig)
         break;
 
     case SIGUSR1:
+        // Logrotate uses this
         closeLog();
         break;
 
     case SIGUSR2:
+        // Logrotate uses this
         openLog();
         break;
     }
