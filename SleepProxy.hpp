@@ -24,19 +24,15 @@ class SleepProxy : public FixedRateProgram
 {
 public:
 
-    SleepProxy(int argc, char** argv, double period_s);
-
     SleepProxy(int argc, char** argv, const PosixTimespec& tp);
 
     virtual ~SleepProxy();
 
-    virtual bool step();
+    virtual void step();
 
     virtual int signal(int sig);
 
 private:
-
-    void initialize();
 
     void closeLog();
 

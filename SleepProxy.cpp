@@ -42,26 +42,6 @@ const unsigned int SleepProxy::PARSING_BUFFER_LENGTH = 1000;
 //=============================================================================
 //
 //=============================================================================
-SleepProxy::SleepProxy(int argc, char** argv, double period_s) :
-    FixedRateProgram(argc, argv, period_s),
-    default_filename("/etc/sproxy/config"),
-    is_big_endian(false),
-    interface_name("eth0"),
-    config_filename("/etc/sproxy/devices"),
-    log_filename("/var/log/sproxy.log"),
-    pid_filename("/var/run/sproxy.pid"),
-    daemonize(false),
-    device_check_period(10),
-    device_response_grace_period(1),
-    aggressive_garp(true),
-    sleep_check_in_progress(false)
-{
-    initialize();
-}
-
-//=============================================================================
-//
-//=============================================================================
 SleepProxy::SleepProxy(int argc, char** argv, const PosixTimespec& tp) :
     FixedRateProgram(argc, argv, tp),
     default_filename("/etc/sproxy/config"),
@@ -75,14 +55,6 @@ SleepProxy::SleepProxy(int argc, char** argv, const PosixTimespec& tp) :
     device_response_grace_period(1),
     aggressive_garp(true),
     sleep_check_in_progress(false)
-{
-    initialize();
-}
-
-//=============================================================================
-//
-//=============================================================================
-void SleepProxy::initialize()
 {
 /*    struct sigaction act;
     act.sa_handler = cleanExit;
@@ -183,7 +155,7 @@ SleepProxy::~SleepProxy()
 //=============================================================================
 //
 //=============================================================================
-bool SleepProxy::step()
+void SleepProxy::step()
 {
     // Sniff a packet, if any are there
     int bytes_read = sniff_socket.read(frame_buffer, ETH_FRAME_LEN);
