@@ -24,9 +24,11 @@ class SleepProxy : public FixedRateProgram
 {
 public:
 
-    SleepProxy(int argc, char** argv, const PosixTimespec& tp);
+    SleepProxy();
 
     virtual ~SleepProxy();
+
+    void initialize(int argc, char** argv, const PosixTimespec& tp);
 
     virtual void step();
 
@@ -97,6 +99,23 @@ private:
 
     LinuxRawSocket sniff_socket;
 
+
+    // Filename of the default settings file, typically located in /etc/default
+    std::string default_filename;
+
+    // Filename of the config file, typically located in /etc
+    std::string config_filename;
+
+    // Filename of the log file, typically located in /var/log
+    std::string log_filename;
+
+    // Filename of the file in which PID is stored
+    std::string pid_filename;
+
+    // Name of the interface on which proxying will take place
+    std::string interface_name;
+
+
     PosixTimespec frame_start;
     PosixTimespec last_sleep_check;
     PosixTimespec sleep_check_period;
@@ -108,8 +127,6 @@ private:
     // Length of the input buffers used during config and default file parsing
     static const unsigned int PARSING_BUFFER_LENGTH;
 
-    // Filename of the default settings file, typically located in /etc/default
-    std::string default_filename;
 
     // Stores known devices to monitor
     std::vector<Device> devices;
@@ -133,21 +150,6 @@ private:
 
     // Log messages go out on this stream
     std::ofstream log_stream;
-
-    // THESE CONFIGURATION VARIABLES ARE SET BASED ON THE DEFAULT FILE AND/OR
-    // PROGRAM ARGUMENTS
-
-    // Name of the interface on which proxying will take place
-    std::string interface_name;
-
-    // Filename of the config file, typically located in /etc
-    std::string config_filename;
-
-    // Filename of the log file, typically located in /var/log
-    std::string log_filename;
-
-    // Filename of the file in which PID is stored
-    std::string pid_filename;
 
     // Whether or not this process should daemonize
     bool daemonize;

@@ -44,14 +44,14 @@ const unsigned int SleepProxy::PARSING_BUFFER_LENGTH = 1000;
 //=============================================================================
 SleepProxy::SleepProxy(int argc, char** argv, const PosixTimespec& tp) :
     FixedRateProgram(argc, argv, tp),
-    sleep_check_period(10),
-    sleep_check_response_grace_period(1),
     default_filename("/etc/sproxy/config"),
-    is_big_endian(false),
-    interface_name("eth0"),
     config_filename("/etc/sproxy/devices"),
     log_filename("/var/log/sproxy.log"),
     pid_filename("/var/run/sproxy.pid"),
+    interface_name("eth0"),
+    sleep_check_period(10),
+    sleep_check_response_grace_period(1),
+    is_big_endian(false),
     daemonize(false),
     aggressive_garp(true),
     sleep_check_in_progress(false)
