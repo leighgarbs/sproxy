@@ -349,14 +349,6 @@ void SleepProxy::obtain_own_mac_and_ip()
     close(sock_fd);
 }
 
-//=============================================================================
-// Gets a single time value (in seconds) from a timeval structure
-//=============================================================================
-double SleepProxy::get_time(const timeval& time)
-{
-    return time.tv_sec + static_cast<double>(time.tv_usec) / 1e6;
-}
-
 //==============================================================================
 // Converts binary MAC address to a string representation
 //==============================================================================

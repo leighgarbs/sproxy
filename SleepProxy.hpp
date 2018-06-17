@@ -48,8 +48,6 @@ private:
 
     void obtain_own_mac_and_ip();
 
-    double get_time(const timeval& time);
-
     void mac_to_string(const unsigned char* const mac,
                        std::string&               mac_str);
 
