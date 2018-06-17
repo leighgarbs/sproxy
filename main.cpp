@@ -16,5 +16,11 @@ int main(int argc, char** argv)
     SleepProxy sproxy(argc, argv, 0.1);
     sproxyp = &sproxy;
 
+    // Register signals to handle
+    sproxy.attachSignal(SIGINT,  handle_signal);
+    sproxy.attachSignal(SIGTERM, handle_signal);
+    sproxy.attachSignal(SIGUSR1, handle_signal);
+    sproxy.attachSignal(SIGUSR2, handle_signal);
+
     return sproxy.run();
 }

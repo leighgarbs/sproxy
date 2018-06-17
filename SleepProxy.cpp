@@ -56,40 +56,6 @@ SleepProxy::SleepProxy(int argc, char** argv, const PosixTimespec& tp) :
     aggressive_garp(true),
     sleep_check_in_progress(false)
 {
-/*    struct sigaction act;
-    act.sa_handler = cleanExit;
-    act.sa_flags = 0;
-
-    // Attach cleanExit to the interrupt signal; users can hit Ctrl+c and stop
-    // the program
-    if (sigaction(SIGINT, &act, 0) == -1)
-    {
-        fprintf(stderr, "Could not attach SIGINT handler\n");
-        return;
-    }
-
-    // Attach cleanExit to the terminate signal; kill should work with no
-    // arguments
-    if (sigaction(SIGTERM, &act, 0) == -1)
-    {
-        fprintf(stderr, "Could not attach SIGTERM handler\n");
-        return;
-    }
-
-    act.sa_handler = closeLog;
-    if (sigaction(SIGUSR1, &act, 0) == -1)
-    {
-        fprintf(stderr, "Could not attach SIGUSR1 handler\n");
-        return;
-    }
-
-    act.sa_handler = openLog;
-    if (sigaction(SIGUSR2, &act, 0) == -1)
-    {
-        fprintf(stderr, "Could not attach SIGUSR2 handler\n");
-        return;
-    }
-*/
     // Read configuration settings
     parse_default_file(default_filename);
 
@@ -284,7 +250,7 @@ void SleepProxy::writePidToFile(const std::string& pid_filename)
 bool SleepProxy::processArguments()
 {
     std::vector<std::string> program_arguments;
-    getProgramArguments(program_arguments);
+    getArguments(program_arguments);
 
     for (std::vector<std::string>::const_iterator i = program_arguments.begin();
          i != program_arguments.end();
