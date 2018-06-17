@@ -12,6 +12,7 @@
 #include <cstring>
 #include <ctime>
 #include <fstream>
+#include <iterator>
 #include <net/if.h>
 #include <signal.h>
 #include <sstream>
@@ -246,13 +247,27 @@ void SleepProxy::writePidToFile(const std::string& pid_filename)
 //=============================================================================
 bool SleepProxy::processArguments()
 {
-    std::vector<std::string> program_arguments;
-    getArguments(program_arguments);
+    std::vector<std::string> arguments;
+    getArguments(arguments);
 
-    for (std::vector<std::string>::const_iterator i = program_arguments.begin();
-         i != program_arguments.end();
-         ++i)
+    for (std::vector<std::string>::iterator carg = arguments.begin();
+         carg != arguments.end();
+         ++carg)
     {
+        
+        // Process argument pairs here
+        if (std::distance(carg, arguments.end()) > 1)
+        {
+            // Convenience reference to the second argument in the pair
+            std::vector<std::string>::iterator narg = carg + 1;
+
+            if (*carg == "-c")
+            {
+                config_filename = *carg;
+            }
+
+            ++carg;
+        }
     }
 
     // Loop over all thxe arguments, and process them
@@ -263,7 +278,7 @@ bool SleepProxy::processArguments()
         {
             arg++;
 
-            config_filename = argv[arg];
+
         }
         // Argument -D indicates this process should daemonize itself
         else if (strcmp("-D", argv[arg]) == 0)
