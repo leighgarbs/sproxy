@@ -16,7 +16,5 @@ int main(int argc, char** argv)
     SleepProxy sproxy(argc, argv, 0.1);
     sproxyp = &sproxy;
 
-    sproxy.run();
-
-    return 1;
+    return sproxy.run();
 }
