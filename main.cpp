@@ -17,10 +17,10 @@ int main(int argc, char** argv)
     sproxyp = &sproxy;
 
     // Register signals to handle
-    sproxy.attachSignal(SIGINT,  handle_signal);
-    sproxy.attachSignal(SIGTERM, handle_signal);
-    sproxy.attachSignal(SIGUSR1, handle_signal);
-    sproxy.attachSignal(SIGUSR2, handle_signal);
+    sproxy.registerSignal(SIGINT,  handle_signal);
+    sproxy.registerSignal(SIGTERM, handle_signal);
+    sproxy.registerSignal(SIGUSR1, handle_signal);
+    sproxy.registerSignal(SIGUSR2, handle_signal);
 
     return sproxy.run();
 }
