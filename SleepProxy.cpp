@@ -120,6 +120,8 @@ void SleepProxy::step()
     // Grab the current time
     getFrameStart(frame_start);
 
+    processDeliveredSignals();
+
     // How much time has passed since the last sleep check?
     PosixTimespec time_since_lsc = frame_start - last_sleep_check;
 
@@ -168,27 +170,22 @@ void SleepProxy::step()
 //=============================================================================
 // Signal event handlers
 //=============================================================================
-int SleepProxy::signal(int sig)
+void SleepProxy::processDeliveredSignals()
 {
-    switch(sig)
+    if (isSignalDelivered(SIGINT) || isSignalDelivered(SIGTERM))
     {
-    case SIGINT:
-    case SIGTERM:
         cleanExit();
-        break;
-
-    case SIGUSR1:
+    }
+    else if (isSignalDelivered(SIGUSR1))
+    {
         // Logrotate uses this
         closeLog();
-        break;
-
-    case SIGUSR2:
+    }
+    else if (isSignalDelivered(SIGUSR2))
+    {
         // Logrotate uses this
         openLog();
-        break;
     }
-
-    return 0;
 }
 
 //=============================================================================

@@ -30,8 +30,9 @@ public:
 
     virtual void step();
 
-    // Signal event handlers
-    virtual int signal(int sig);
+protected:
+
+    virtual void processDeliveredSignals();
 
 private:
 
