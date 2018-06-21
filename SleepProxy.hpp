@@ -24,25 +24,30 @@ class SleepProxy : public FixedRateProgram
 {
 public:
 
+    // Parses configuration files and command-line arguments, applies
+    // corresponding state, prepares raw socket for use; tp is the period
+    // between step() executions
     SleepProxy(int argc, char** argv, const PosixTimespec& tp);
 
     virtual ~SleepProxy();
 
+    // Body of the main loop, executed periodically and indefinitely
     virtual void step();
 
 protected:
 
+    // Delivered signals handled here
     virtual void processDeliveredSignals();
 
 private:
 
-    void closeLog();
-
+    // Opens the log file; used after log rotation and during startup
     void openLog();
 
-    void cleanExit();
+    // Closes the log file; used before log rotation and on shutdown
+    void closeLog();
 
-    void writePidToFile(const std::string& pid_filename);
+    void shutdown();
 
     bool processArguments();
 
@@ -93,9 +98,10 @@ private:
 
     void issue_sleep_checks();
 
+    static void writePidToFile(const std::string& pid_filename);
+
 
     LinuxRawSocket sniff_socket;
-
 
     // Filename of the default settings file, typically located in /etc/default
     std::string default_filename;

@@ -41,7 +41,9 @@
 const unsigned int SleepProxy::PARSING_BUFFER_LENGTH = 1000;
 
 //=============================================================================
-//
+// Parses configuration files and command-line arguments, applies corresponding
+// state, prepares raw socket for use; tp is the period between step()
+// executions
 //=============================================================================
 SleepProxy::SleepProxy(int argc, char** argv, const PosixTimespec& tp) :
     FixedRateProgram(argc, argv, tp),
@@ -92,15 +94,6 @@ SleepProxy::SleepProxy(int argc, char** argv, const PosixTimespec& tp) :
     sniff_socket.setInputInterface(interface_name);
     sniff_socket.disableBlocking();
 
-    // Initialize some time-related variables used in the main loop to determine
-    // when sleep checks are performed.  These are all initialized to the
-    // current time, since there's no better time to initialize them to, and it
-    // makes the main loop below work on the first pass
-
-    // Marks the current time
-    //timeval current_time;
-    //gettimeofday(&current_time, 0);
-
     // Note that the service has started
     log.write("Service starting");
 }
@@ -110,11 +103,11 @@ SleepProxy::SleepProxy(int argc, char** argv, const PosixTimespec& tp) :
 //=============================================================================
 SleepProxy::~SleepProxy()
 {
-    cleanExit();
+    shutdown();
 }
 
 //=============================================================================
-//
+// Body of the main loop, executed periodically and indefinitely
 //=============================================================================
 void SleepProxy::step()
 {
@@ -169,13 +162,13 @@ void SleepProxy::step()
 }
 
 //=============================================================================
-// Signal event handlers
+// Delivered signals handled here
 //=============================================================================
 void SleepProxy::processDeliveredSignals()
 {
     if (isSignalDelivered(SIGINT) || isSignalDelivered(SIGTERM))
     {
-        cleanExit();
+        shutdown();
     }
     else if (isSignalDelivered(SIGUSR1))
     {
@@ -187,15 +180,6 @@ void SleepProxy::processDeliveredSignals()
         // Logrotate uses this
         openLog();
     }
-}
-
-//=============================================================================
-// Closes the log file; used before log rotation and on shutdown
-//=============================================================================
-void SleepProxy::closeLog()
-{
-    log.write("Closing log file");
-    log_stream.close();
 }
 
 //=============================================================================
@@ -213,9 +197,18 @@ void SleepProxy::openLog()
 }
 
 //=============================================================================
+// Closes the log file; used before log rotation and on shutdown
+//=============================================================================
+void SleepProxy::closeLog()
+{
+    log.write("Closing log file");
+    log_stream.close();
+}
+
+//=============================================================================
 // Clean up that should be done before the program halts
 //=============================================================================
-void SleepProxy::cleanExit()
+void SleepProxy::shutdown()
 {
     // Log that the service is stopping
     log.write("Service stopping");
@@ -227,19 +220,6 @@ void SleepProxy::cleanExit()
 
     // We're done, exit
     exit(0);
-}
-
-//=============================================================================
-// Writes the PID of the calling process to file
-//=============================================================================
-void SleepProxy::writePidToFile(const std::string& pid_filename)
-{
-    // Get the PID
-    int pid = getpid();
-
-    std::ofstream out_stream(pid_filename.c_str());
-    out_stream << pid << "\n";
-    out_stream.close();
 }
 
 //=============================================================================
@@ -330,7 +310,7 @@ void SleepProxy::obtain_own_mac_and_ip()
     {
         // If something goes wrong, print an error message and quit
         perror(0);
-        cleanExit();
+        shutdown();
     }
 
     // Fill out an ifreq with name of the target interface
@@ -342,7 +322,7 @@ void SleepProxy::obtain_own_mac_and_ip()
     {
         // If something goes wrong, print an error message and quit
         perror(0);
-        cleanExit();
+        shutdown();
     }
 
     // Initialize own_mac
@@ -353,7 +333,7 @@ void SleepProxy::obtain_own_mac_and_ip()
     {
         // If something goes wrong, print an error message and quit
         perror(0);
-        cleanExit();
+        shutdown();
     }
 
     // Initialize own IP address
@@ -648,7 +628,7 @@ void SleepProxy::parse_config_file(const std::string& filename)
             std::cerr << "Error in " << filename << "\n"
                       << "Could not parse MAC address on line " << line_number
                       << "\n";
-            cleanExit();
+            shutdown();
         }
 
         // Now that we know we have a new device to monitor, push a new Device onto
@@ -671,7 +651,7 @@ void SleepProxy::parse_config_file(const std::string& filename)
             std::cerr << "Error in " << filename << "\n"
                       << "Could not parse MAC address on line " << line_number
                       << "\n";
-            cleanExit();
+            shutdown();
         }
 
         // Copy from temporary storage into permanent storage
@@ -693,7 +673,7 @@ void SleepProxy::parse_config_file(const std::string& filename)
         {
             // If the IP parsing failed, tell the user why and exit
             std::cerr << "Could not parse IP address on line " << line_number << "\n";
-            cleanExit();
+            shutdown();
         }
 
         // Copy from temporary storage into permanent storage
@@ -722,8 +702,9 @@ void SleepProxy::parse_config_file(const std::string& filename)
             if (convert_stream.fail())
             {
                 // If something else went wrong, inform the user and quit
-                std::cerr << "Unable to parse port on line " << line_number << "\n";
-                cleanExit();
+                std::cerr << "Unable to parse port on line " << line_number
+                          << "\n";
+                shutdown();
             }
 
             // Add the port to the device's list
@@ -1193,4 +1174,14 @@ void SleepProxy::issue_sleep_checks()
     query_socket.write((const char*)arp_request,
                        sizeof(ethernet_ii_header) + sizeof(arp_ipv4));
   }
+}
+
+//=============================================================================
+// Writes the PID of the calling process to file
+//=============================================================================
+void SleepProxy::writePidToFile(const std::string& pid_filename)
+{
+    std::ofstream out_stream(pid_filename.c_str());
+    out_stream << getpid() << "\n";
+    out_stream.close();
 }
