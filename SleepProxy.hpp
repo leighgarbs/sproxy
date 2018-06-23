@@ -56,9 +56,6 @@ private:
 
     void obtain_own_mac_and_ip();
 
-    void mac_to_string(const unsigned char* const mac,
-                       std::string&               mac_str);
-
     void ip_to_string(const unsigned char* const ip,
                       std::string&               ip_str);
 

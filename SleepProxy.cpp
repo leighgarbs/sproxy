@@ -348,19 +348,6 @@ void SleepProxy::obtain_own_mac_and_ip()
 }
 
 //==============================================================================
-// Converts binary MAC address to a string representation
-//==============================================================================
-void SleepProxy::mac_to_string(const unsigned char* const mac,
-                               std::string&               mac_str)
-{
-    char mac_cstr[18];
-    sprintf(mac_cstr, "%02x:%02x:%02x:%02x:%02x:%02x",
-            mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-
-    mac_str = mac_cstr;
-}
-
-//==============================================================================
 // Converts binary IP address to a string representation
 //==============================================================================
 void SleepProxy::ip_to_string(const unsigned char* const ip,
