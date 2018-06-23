@@ -8,6 +8,7 @@
 #include "FixedRateProgram.hpp"
 
 #include "Device.hpp"
+#include "Endian.hpp"
 #include "Log.hpp"
 #include "PosixTimespec.hpp"
 #include "arp_ipv4.h"
@@ -145,8 +146,7 @@ private:
     // IP address assigned to interface with name interface_name
     char own_ip[4];
 
-    // Is this host big-endian?
-    bool is_big_endian;
+    Endian::Endianness endianness;
 
     // Used to log important sproxy activities
     Log log;

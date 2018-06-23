@@ -24,6 +24,7 @@
 
 #include "SleepProxy.hpp"
 
+#include "Endian.hpp"
 #include "Log.hpp"
 #include "PosixTimespec.hpp"
 #include "arp_ipv4.h"
@@ -54,7 +55,7 @@ SleepProxy::SleepProxy(int argc, char** argv, const PosixTimespec& tp) :
     interface_name("eth0"),
     sleep_check_period(10),
     sleep_check_response_grace_period(1),
-    is_big_endian(false),
+    endianness(Endian::LITTLE),
     daemonize(false),
     aggressive_garp(true),
     sleep_check_in_progress(false)
@@ -84,8 +85,7 @@ SleepProxy::SleepProxy(int argc, char** argv, const PosixTimespec& tp) :
     obtain_own_mac_and_ip();
 
     // Determine endian-ness of this host
-    unsigned short test_var = 0xff00;
-    is_big_endian = *(unsigned char*)&test_var > 0;
+    endianness = Endian::getEndianness();
 
     // Initialize the template ARP request used during sleep checking
     initialize_arp_request();
@@ -1056,7 +1056,7 @@ void SleepProxy::handle_frame(const char* frame_buffer, unsigned int bytes_read)
 
               // Byte-swap the retrieved port if the endian-ness of this host
               // doesn't match network byte order
-              if(!is_big_endian)
+              if (endianness == Endian::LITTLE)
               {
                 // Copy the port's two bytes
                 unsigned char byte1 = *(unsigned char*)&destination_port;
