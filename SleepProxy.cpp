@@ -114,8 +114,6 @@ void SleepProxy::step()
     // Grab the current time
     getFrameStart(frame_start);
 
-    processDeliveredSignals();
-
     // How much time has passed since the last sleep check?
     PosixTimespec time_since_lsc = frame_start - last_sleep_check;
 
@@ -159,6 +157,11 @@ void SleepProxy::step()
         }
     }
     while (bytes_read > 0);
+
+    // It's possible for this to run shutdown(), which itself releases resources
+    // needed by this class.  Let's handle signals here, so if we do indeed
+    // shutdown we do so after this frame has used all the needed resources.
+    processDeliveredSignals();
 }
 
 //=============================================================================
@@ -166,20 +169,97 @@ void SleepProxy::step()
 //=============================================================================
 void SleepProxy::processDeliveredSignals()
 {
-    if (isSignalDelivered(SIGINT) || isSignalDelivered(SIGTERM))
-    {
-        shutdown();
-    }
-    else if (isSignalDelivered(SIGUSR1))
+    if (isSignalDelivered(SIGUSR1))
     {
         // Logrotate uses this
         closeLog();
     }
-    else if (isSignalDelivered(SIGUSR2))
+
+    if (isSignalDelivered(SIGUSR2))
     {
         // Logrotate uses this
         openLog();
     }
+
+    if (isSignalDelivered(SIGINT) || isSignalDelivered(SIGTERM))
+    {
+        shutdown();
+    }
+
+    unsignalAll();
+}
+
+//=============================================================================
+// Interprets program arguments and applies corresponding state
+//=============================================================================
+bool SleepProxy::processArguments()
+{
+    std::vector<std::string> arguments;
+    getArguments(arguments);
+
+    for (std::vector<std::string>::iterator carg = arguments.begin();
+         carg != arguments.end();
+         ++carg)
+    {
+        // Argument -D indicates this process should daemonize itself
+        if (*carg == "-D")
+        {
+            daemonize = true;
+        }
+        // Process argument pairs here
+        else if (std::distance(carg, arguments.end()) > 1)
+        {
+            // Convenience reference to the second argument in the pair
+            std::vector<std::string>::iterator narg = carg + 1;
+
+            // Assume we're going to process a valid argument here.  If we don't
+            // this will be set false
+            bool twoarg_processed = true;
+
+            // Argument -c specifies the config file filename
+            if (*carg == "-c")
+            {
+                config_filename = *narg;
+            }
+            // Argument -d specifies the default file filename
+            else if (*carg == "-d")
+            {
+                default_filename = *narg;
+            }
+            // Argument -l specifies the log file filename
+            else if (*carg == "-i")
+            {
+                interface_name = *narg;
+            }
+            // Argument -l specifies the log file filename
+            else if (*carg == "-l")
+            {
+                log_filename = *narg;
+            }
+            // Argument --pidfile specifies the file in which the PID is stored
+            else if (*carg == "--pidfile")
+            {
+                pid_filename = *narg;
+            }
+            else
+            {
+                // If we get here we didn't actually process anything
+                twoarg_processed = false;
+            }
+
+            // If we processed a switch with an argument then we should bump the
+            // current argument here to prevent the argument from being
+            // processed again
+            if (twoarg_processed)
+            {
+                ++carg;
+            }
+        }
+    }
+
+    // If execution reaches here there was an acceptable set of arguments
+    // provided
+    return true;
 }
 
 //=============================================================================
@@ -206,7 +286,7 @@ void SleepProxy::closeLog()
 }
 
 //=============================================================================
-// Clean up that should be done before the program halts
+// Frees resources and triggers program shutdown at the end of the current frame
 //=============================================================================
 void SleepProxy::shutdown()
 {
@@ -218,85 +298,8 @@ void SleepProxy::shutdown()
     // Delete the PID file
     unlink(pid_filename.c_str());
 
-    // We're done, exit
-    exit(0);
-}
-
-//=============================================================================
-// Processes program arguments
-//=============================================================================
-bool SleepProxy::processArguments()
-{
-    std::vector<std::string> arguments;
-    getArguments(arguments);
-
-    for (std::vector<std::string>::iterator carg = arguments.begin();
-         carg != arguments.end();
-         ++carg)
-    {
-        
-        // Process argument pairs here
-        if (std::distance(carg, arguments.end()) > 1)
-        {
-            // Convenience reference to the second argument in the pair
-            std::vector<std::string>::iterator narg = carg + 1;
-
-            if (*carg == "-c")
-            {
-                config_filename = *carg;
-            }
-
-            ++carg;
-        }
-    }
-
-    // Loop over all thxe arguments, and process them
-/*    for (int arg = 1; arg < argc; arg++)
-    {
-        // Argument -c specifies the config file filename
-        if (strcmp("-c", argv[arg]) == 0 && arg + 1 < argc)
-        {
-            arg++;
-
-
-        }
-        // Argument -D indicates this process should daemonize itself
-        else if (strcmp("-D", argv[arg]) == 0)
-        {
-            daemonize = true;
-        }
-        // Argument -d specifies the default file filename
-        else if (strcmp("-d", argv[arg]) == 0 && arg + 1 < argc)
-        {
-            arg++;
-
-            default_filename = argv[arg];
-        }
-        // Argument -i specifies an interface to monitor
-        else if (strcmp("-i", argv[arg]) == 0 && arg + 1 < argc)
-        {
-            arg++;
-
-            interface_name = argv[arg];
-        }
-        // Argument -l specifies the log file filename
-        else if (strcmp("-l", argv[arg]) == 0 && arg + 1 < argc)
-        {
-            arg++;
-
-            interface_name = argv[arg];
-        }
-        else if (strcmp("--pidfile", argv[arg]) == 0 && arg + 1 < argc)
-        {
-            arg++;
-
-            pid_filename = argv[arg];
-        }
-        }*/
-
-    // If execution reaches here there was an acceptable set of arguments
-    // provided
-    return true;
+    // Signal that we should stop running
+    setTerminate(true);
 }
 
 //=============================================================================

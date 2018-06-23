@@ -41,15 +41,18 @@ protected:
 
 private:
 
+    // Interprets program arguments and applies corresponding state
+    bool processArguments();
+
     // Opens the log file; used after log rotation and during startup
     void openLog();
 
     // Closes the log file; used before log rotation and on shutdown
     void closeLog();
 
+    // Frees resources and triggers program shutdown at the end of the current
+    // frame
     void shutdown();
-
-    bool processArguments();
 
     void obtain_own_mac_and_ip();
 
