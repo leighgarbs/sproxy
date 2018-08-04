@@ -71,9 +71,34 @@ def stageCppcheck =
                   severityNoCategory: false
 }
 
+def stageBuildRelease =
+{
+  sh '''
+    $TEMP_BIN/run-cmake --release .
+    make
+  '''
+}
+
+def stageDetectWarnings =
+{
+  warnings canComputeNew: false,
+           canResolveRelativePaths: false,
+           categoriesPattern: '',
+           consoleParsers: [[parserName: 'GNU Make + GNU C Compiler (gcc)']]
+}
+
+def stageBuildDebug =
+{
+  sh '''
+    $TEMP_BIN/run-cmake --debug .
+    make
+  '''
+}
+
 def stageClangStaticAnalysis =
 {
   sh '''
+    rm CMakeCache.txt
     rm -rf CMakeFiles
     scan-build $TEMP_BIN/run-cmake --debug .
     scan-build -o clangScanBuildReports -v -v --use-cc clang \
@@ -83,6 +108,9 @@ def stageClangStaticAnalysis =
 
 stages = [[name: 'Checkout',              body: stageCheckout],
           [name: 'cppcheck',              body: stageCppcheck],
+          [name: 'Release Build',         body: stageBuildRelease],
+          [name: 'Detect Warnings',       body: stageDetectWarnings],
+          [name: 'Debug Build',           body: stageBuildDebug],
           [name: 'Clang Static Analyzer', body: stageClangStaticAnalysis]]
 
 stageNames = []
