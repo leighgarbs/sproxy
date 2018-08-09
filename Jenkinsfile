@@ -7,6 +7,21 @@ def setUnstableOnShellResult =
   }
 }
 
+def saveArtifacts =
+{
+  sh '''
+    ARTIFACTS_DIR=artifacts
+    ARTIFACTS_STAGE_DIR=$ARTIFACTS_DIR/$STAGE_NAME
+
+    mkdir -p "$ARTIFACTS_DIR"
+    rm -rf "$ARTIFACTS_STAGE_DIR"
+    mkdir -p "$ARTIFACTS_STAGE_DIR"
+    cd workdir
+    git ls-files -o --directory | xargs -n 1 -I{} cp -a --parents {} \
+      "../$ARTIFACTS_STAGE_DIR"
+  '''
+}
+
 def doStage =
 {
   stageName, stageBody ->
@@ -22,6 +37,14 @@ def doStage =
       updateGitlabCommitStatus(name: stageName, state: 'failed')
     }
   }
+}
+
+def cleanUp =
+{
+  sh '''
+    cd workdir
+    git clean -x -d -f
+  '''
 }
 
 def stageCheckout =
@@ -42,44 +65,71 @@ def stageCheckout =
                 parentCredentials: false,
                 recursiveSubmodules: true,
                 reference: '',
-                trackingSubmodules: false]],
+                trackingSubmodules: false],
+                [$class: 'RelativeTargetDirectory',
+                relativeTargetDir: 'workdir']],
     submoduleCfg: [],
     userRemoteConfigs: [[credentialsId: '',
                        url: gitlabUrlSproxy]]]
 
   sh """
-    git clone $gitlabUrlBin $TEMP_BIN
+    git clone $gitlabUrlBin
   """
 }
 
 def stageCppcheck =
 {
-  def shellReturnStatus = sh returnStatus: true, script: '''
-    $TEMP_BIN/run-cppcheck -J --suppress=unusedFunction .
+  cleanUp()
+
+  dir('workdir')
+  {
+    def shellReturnStatus = sh returnStatus: true, script: '''
+      ../bin/run-cppcheck -J --suppress=unusedFunction .
+    '''
+
+    setUnstableOnShellResult(shellReturnStatus, 1)
+
+    publishCppcheck displayAllErrors: false,
+                    displayErrorSeverity: true,
+                    displayNoCategorySeverity: true,
+                    displayPerformanceSeverity: true,
+                    displayPortabilitySeverity: true,
+                    displayStyleSeverity: true,
+                    displayWarningSeverity: true,
+                    pattern: 'cppcheck-result.xml',
+                    severityNoCategory: false
+  }
+
+  saveArtifacts()
+}
+
+def stageBuildDebug =
+{
+  cleanUp()
+
+  sh '''
+    cd workdir
+    ../bin/run-cmake --debug .
+    make -B
   '''
 
-  setUnstableOnShellResult(shellReturnStatus, 1)
-
-  publishCppcheck displayAllErrors: false,
-                  displayErrorSeverity: true,
-                  displayNoCategorySeverity: true,
-                  displayPerformanceSeverity: true,
-                  displayPortabilitySeverity: true,
-                  displayStyleSeverity: true,
-                  displayWarningSeverity: true,
-                  pattern: 'cppcheck-result.xml',
-                  severityNoCategory: false
+  saveArtifacts()
 }
 
 def stageBuildRelease =
 {
+  cleanUp()
+
   sh '''
-    $TEMP_BIN/run-cmake --release .
-    make
+    cd workdir
+    ../bin/run-cmake --release .
+    make -B
   '''
+
+  saveArtifacts()
 }
 
-def stageDetectWarnings =
+def stageDetectGCCWarnings =
 {
   warnings canComputeNew: false,
            canResolveRelativePaths: false,
@@ -87,31 +137,41 @@ def stageDetectWarnings =
            consoleParsers: [[parserName: 'GNU Make + GNU C Compiler (gcc)']]
 }
 
-def stageBuildDebug =
+def stageDetectClangWarnings =
 {
-  sh '''
-    $TEMP_BIN/run-cmake --debug .
-    make
-  '''
+  warnings canComputeNew: false,
+           canResolveRelativePaths: false,
+           categoriesPattern: '',
+           consoleParsers: [[parserName: 'Clang (LLVM based)']],
+           defaultEncoding: '',
+           excludePattern: '',
+           healthy: '',
+           includePattern: '',
+           messagesPattern: '',
+           unHealthy: ''
 }
 
 def stageClangStaticAnalysis =
 {
+  cleanUp()
+
   sh '''
-    rm CMakeCache.txt
-    rm -rf CMakeFiles
-    scan-build $TEMP_BIN/run-cmake --debug .
+    cd workdir
+    scan-build ../bin/run-cmake --debug .
     scan-build -o clangScanBuildReports -v -v --use-cc clang \
-      --use-analyzer=/usr/bin/clang make
+      --use-analyzer=/usr/bin/clang make -B
   '''
+
+  saveArtifacts()
 }
 
 stages = [[name: 'Checkout',              body: stageCheckout],
           [name: 'cppcheck',              body: stageCppcheck],
           [name: 'Release Build',         body: stageBuildRelease],
-          [name: 'Detect Warnings',       body: stageDetectWarnings],
           [name: 'Debug Build',           body: stageBuildDebug],
-          [name: 'Clang Static Analyzer', body: stageClangStaticAnalysis]]
+          [name: 'Clang Static Analyzer', body: stageClangStaticAnalysis],
+          [name: 'Detect GCC Warnings',   body: stageDetectGCCWarnings],
+          [name: 'Detect Clang Warnings', body: stageDetectClangWarnings]]
 
 stageNames = []
 for (i = 0; i < stages.size(); i++)
