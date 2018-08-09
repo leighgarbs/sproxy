@@ -129,12 +129,26 @@ def stageBuildRelease =
   saveArtifacts()
 }
 
-def stageDetectWarnings =
+def stageDetectGCCWarnings =
 {
   warnings canComputeNew: false,
            canResolveRelativePaths: false,
            categoriesPattern: '',
            consoleParsers: [[parserName: 'GNU Make + GNU C Compiler (gcc)']]
+}
+
+def stageDetectClangWarnings =
+{
+  warnings canComputeNew: false,
+           canResolveRelativePaths: false,
+           categoriesPattern: '',
+           consoleParsers: [[parserName: 'Clang (LLVM based)']],
+           defaultEncoding: '',
+           excludePattern: '',
+           healthy: '',
+           includePattern: '',
+           messagesPattern: '',
+           unHealthy: ''
 }
 
 def stageClangStaticAnalysis =
@@ -154,9 +168,10 @@ def stageClangStaticAnalysis =
 stages = [[name: 'Checkout',              body: stageCheckout],
           [name: 'cppcheck',              body: stageCppcheck],
           [name: 'Release Build',         body: stageBuildRelease],
-          [name: 'Detect Warnings',       body: stageDetectWarnings],
+          [name: 'Detect GCC Warnings',   body: stageDetectGCCWarnings],
           [name: 'Debug Build',           body: stageBuildDebug],
-          [name: 'Clang Static Analyzer', body: stageClangStaticAnalysis]]
+          [name: 'Clang Static Analyzer', body: stageClangStaticAnalysis],
+          [name: 'Detect Clang Warnings', body: stageDetectClangWarnings]]
 
 stageNames = []
 for (i = 0; i < stages.size(); i++)
