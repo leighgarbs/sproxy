@@ -168,9 +168,9 @@ def stageClangStaticAnalysis =
 stages = [[name: 'Checkout',              body: stageCheckout],
           [name: 'cppcheck',              body: stageCppcheck],
           [name: 'Release Build',         body: stageBuildRelease],
-          [name: 'Detect GCC Warnings',   body: stageDetectGCCWarnings],
           [name: 'Debug Build',           body: stageBuildDebug],
           [name: 'Clang Static Analyzer', body: stageClangStaticAnalysis],
+          [name: 'Detect GCC Warnings',   body: stageDetectGCCWarnings],
           [name: 'Detect Clang Warnings', body: stageDetectClangWarnings]]
 
 stageNames = []
