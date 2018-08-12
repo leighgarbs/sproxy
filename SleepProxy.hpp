@@ -11,6 +11,7 @@
 #include "Endian.hpp"
 #include "Log.hpp"
 #include "PosixTimespec.hpp"
+#include "RawSocket.hpp"
 #include "arp_ipv4.h"
 #include "ethernet_ii_header.h"
 
@@ -18,7 +19,6 @@
 // headers anyway
 #if defined LINUX
 #include <linux/if_ether.h>
-#include "LinuxRawSocket.hpp"
 #endif
 
 class SleepProxy : public FixedRateProgram
@@ -102,7 +102,7 @@ private:
     static void writePidToFile(const std::string& pid_filename);
 
 
-    LinuxRawSocket sniff_socket;
+    RawSocket sniff_socket;
 
     // Filename of the default settings file, typically located in /etc/default
     std::string default_filename;
@@ -125,8 +125,10 @@ private:
     PosixTimespec sleep_check_period;
     PosixTimespec sleep_check_response_grace_period;
 
+    static const unsigned int ETHERNET_FRAME_LENGTH = 1514;
+
     // Sniffed frames are read into this buffer
-    char frame_buffer[ETH_FRAME_LEN];
+    char frame_buffer[ETHERNET_FRAME_LENGTH];
 
     // Length of the input buffers used during config and default file parsing
     static const unsigned int PARSING_BUFFER_LENGTH;

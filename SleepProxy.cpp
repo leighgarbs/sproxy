@@ -27,6 +27,7 @@
 #include "Endian.hpp"
 #include "Log.hpp"
 #include "PosixTimespec.hpp"
+#include "RawSocket.hpp"
 #include "arp_ipv4.h"
 #include "ethernet_ii_header.h"
 #include "ipv4_header.h"
@@ -36,7 +37,6 @@
 // headers anyway
 #if defined LINUX
 #include <linux/if_ether.h>
-#include "LinuxRawSocket.hpp"
 #endif
 
 const unsigned int SleepProxy::PARSING_BUFFER_LENGTH = 1000;
@@ -148,7 +148,7 @@ void SleepProxy::step()
     do
     {
         // Try to sniff a frame
-        bytes_read = sniff_socket.read(frame_buffer, ETH_FRAME_LEN);
+        bytes_read = sniff_socket.read(frame_buffer, ETHERNET_FRAME_LENGTH);
 
         // If anything was sniffed, handle it
         if (bytes_read > 0)
@@ -781,7 +781,7 @@ void SleepProxy::send_wol(const unsigned char* const mac_address)
     }
 
     // The WOL frame is complete; send it
-    LinuxRawSocket raw_socket;
+    RawSocket raw_socket;
     raw_socket.setOutputInterface(interface_name);
     raw_socket.write(const_cast<const char*>(wol_buffer), buf_size);
 }
@@ -854,7 +854,7 @@ void SleepProxy::send_garp(const unsigned char* ip_address,
     memcpy(arp_hdr->tpa, ip_address, 4);
 
     // The ARP is complete; send it
-    LinuxRawSocket raw_socket;
+    RawSocket raw_socket;
     raw_socket.setOutputInterface(interface_name);
     raw_socket.write(const_cast<const char*>(garp_buffer), buf_size);
 }
@@ -998,7 +998,7 @@ void SleepProxy::handle_frame(const char* frame_buffer, unsigned int bytes_read)
 
         // Issue the response; this should cause the computer that queried for
         // the sleeping device to believe this computer IS the sleeping device
-        LinuxRawSocket raw_socket;
+        RawSocket raw_socket;
         raw_socket.setOutputInterface(interface_name);
         raw_socket.write(response_buffer, buf_size);
       }
@@ -1142,7 +1142,7 @@ void SleepProxy::set_sleep_status()
 void SleepProxy::issue_sleep_checks()
 {
   // Create a socket to issue requests
-  LinuxRawSocket query_socket;
+  RawSocket query_socket;
   query_socket.setOutputInterface(interface_name);
 
   // Get a pointer to the ARP section of the request
