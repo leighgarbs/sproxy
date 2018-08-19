@@ -32,7 +32,7 @@
 
 const unsigned int SleepProxy::PARSING_BUFFER_LENGTH = 1000;
 
-//=============================================================================
+//==============================================================================
 // Parses configuration files and command-line arguments, applies corresponding
 // state, prepares raw socket for use; tp is the period between step()
 // executions
@@ -89,17 +89,17 @@ SleepProxy::SleepProxy(int argc, char** argv, const PosixTimespec& tp) :
     log.write("Service starting");
 }
 
-//=============================================================================
+//==============================================================================
 //
-//=============================================================================
+//==============================================================================
 SleepProxy::~SleepProxy()
 {
     shutdown();
 }
 
-//=============================================================================
+//==============================================================================
 // Body of the main loop, executed periodically and indefinitely
-//=============================================================================
+//==============================================================================
 void SleepProxy::step()
 {
     // Grab the current time
@@ -155,9 +155,9 @@ void SleepProxy::step()
     processDeliveredSignals();
 }
 
-//=============================================================================
+//==============================================================================
 // Delivered signals handled here
-//=============================================================================
+//==============================================================================
 void SleepProxy::processDeliveredSignals()
 {
     if (isSignalDelivered(SIGUSR1))
@@ -180,9 +180,9 @@ void SleepProxy::processDeliveredSignals()
     unsignalAll();
 }
 
-//=============================================================================
+//==============================================================================
 // Interprets program arguments and applies corresponding state
-//=============================================================================
+//==============================================================================
 bool SleepProxy::processArguments()
 {
     std::vector<std::string> arguments;
@@ -253,9 +253,9 @@ bool SleepProxy::processArguments()
     return true;
 }
 
-//=============================================================================
+//==============================================================================
 // Opens the log file; used after log rotation and during startup
-//=============================================================================
+//==============================================================================
 void SleepProxy::openLog()
 {
     log_stream.open(log_filename.c_str(), std::ofstream::app);
@@ -267,18 +267,18 @@ void SleepProxy::openLog()
     log.write("Log file open");
 }
 
-//=============================================================================
+//==============================================================================
 // Closes the log file; used before log rotation and on shutdown
-//=============================================================================
+//==============================================================================
 void SleepProxy::closeLog()
 {
     log.write("Closing log file");
     log_stream.close();
 }
 
-//=============================================================================
+//==============================================================================
 // Frees resources and triggers program shutdown at the end of the current frame
-//=============================================================================
+//==============================================================================
 void SleepProxy::shutdown()
 {
     // Log that the service is stopping
@@ -293,9 +293,9 @@ void SleepProxy::shutdown()
     setTerminate(true);
 }
 
-//=============================================================================
+//==============================================================================
 // Obtains the MAC and IP address of the interface to be used
-//=============================================================================
+//==============================================================================
 void SleepProxy::obtain_own_mac_and_ip()
 {
     // Getting MAC and IP addresses requires a socket, doesn't matter what kind
@@ -339,20 +339,8 @@ void SleepProxy::obtain_own_mac_and_ip()
 }
 
 //==============================================================================
-// Converts binary IP address to a string representation
-//==============================================================================
-void SleepProxy::ip_to_string(const unsigned char* const ip,
-                              std::string&               ip_str)
-{
-    char ip_cstr[16];
-    sprintf(ip_cstr, "%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
-
-    ip_str = ip_cstr;
-}
-
-//=============================================================================
 // Issuing a WOL
-//=============================================================================
+//==============================================================================
 void SleepProxy::log_issuing_wol(const unsigned char* const mac_address,
                                  const unsigned char* const ip_address,
                                  const unsigned char* const requesting_mac,
@@ -379,9 +367,9 @@ void SleepProxy::log_issuing_wol(const unsigned char* const mac_address,
               + ")");
 }
 
-//=============================================================================
+//==============================================================================
 // Issuing a gratuitous ARP
-//=============================================================================
+//==============================================================================
 void SleepProxy::log_issuing_garp(const unsigned char* const ip_address,
                                   const unsigned char* const mac_address,
                                   const unsigned char* const traffic_mac)
@@ -424,9 +412,9 @@ void SleepProxy::log_issuing_garp(const unsigned char* const ip_address,
     log.write(message);
 }
 
-//=============================================================================
+//==============================================================================
 // Device has awoken
-//=============================================================================
+//==============================================================================
 void SleepProxy::log_device_awake(const unsigned char* const ip_address,
                                   const unsigned char* const mac_address)
 {
@@ -439,12 +427,13 @@ void SleepProxy::log_device_awake(const unsigned char* const ip_address,
     ip_to_string(ip_address, ip_address_str);
 
     // Issue the log message
-    log.write("Device " + mac_address_str + " (" + ip_address_str + ") is awake");
+    log.write(
+        "Device " + mac_address_str + " (" + ip_address_str + ") is awake");
 }
 
-//=============================================================================
+//==============================================================================
 // Device has fallen asleep
-//=============================================================================
+//==============================================================================
 void SleepProxy::log_device_asleep(const unsigned char* const ip_address,
                                    const unsigned char* const mac_address)
 {
@@ -457,12 +446,13 @@ void SleepProxy::log_device_asleep(const unsigned char* const ip_address,
     ip_to_string(ip_address, ip_address_str);
 
     // Issue the log message
-    log.write("Device " + mac_address_str + " (" + ip_address_str + ") is asleep");
+    log.write(
+        "Device " + mac_address_str + " (" + ip_address_str + ") is asleep");
 }
 
-//=============================================================================
+//==============================================================================
 // Parses sproxy defaults file
-//=============================================================================
+//==============================================================================
 void SleepProxy::parse_default_file(const std::string& filename)
 {
     // Open the defaults file
@@ -494,8 +484,9 @@ void SleepProxy::parse_default_file(const std::string& filename)
         // Search through the line for a '='
         size_t equal_sign = default_line_string.find('=');
 
-        // If there isn't an equal sign, or the equal sign is at the beginning or
-        // end of the buffer, just go to the next line because this line is bad
+        // If there isn't an equal sign, or the equal sign is at the beginning
+        // or end of the buffer, just go to the next line because this line is
+        // bad
         if (equal_sign == std::string::npos ||
             equal_sign == 0 ||
             equal_sign == default_line_string.length())
@@ -531,7 +522,8 @@ void SleepProxy::parse_default_file(const std::string& filename)
         }
         else if (left_side == "SLEEP_CHECK_PERIOD")
         {
-            // Convert the right side to a number, that's what it's supposed to be
+            // Convert the right side to a number, that's what it's supposed to
+            // be
             convert_to_number.clear();
             convert_to_number.str(right_side);
             convert_to_number >> sleep_check_period;
@@ -556,9 +548,9 @@ void SleepProxy::parse_default_file(const std::string& filename)
     }
 }
 
-//=============================================================================
+//==============================================================================
 // Parses sproxy config file
-//=============================================================================
+//==============================================================================
 void SleepProxy::parse_config_file(const std::string& filename)
 {
     // Open the file containing the devices to proxy for
@@ -612,8 +604,8 @@ void SleepProxy::parse_config_file(const std::string& filename)
             shutdown();
         }
 
-        // Now that we know we have a new device to monitor, push a new Device onto
-        // the list of devices to track it
+        // Now that we know we have a new device to monitor, push a new Device
+        // onto the list of devices to track it
         Device new_device;
         devices.push_back(new_device);
 
@@ -638,7 +630,8 @@ void SleepProxy::parse_config_file(const std::string& filename)
         // Copy from temporary storage into permanent storage
         for (unsigned int i = 0; i < 6; i++)
         {
-            devices.back().mac_address[i] = static_cast<unsigned char>(temp_mac[i]);
+            devices.back().mac_address[i] =
+                static_cast<unsigned char>(temp_mac[i]);
         }
 
         // Read in the device's IPv4 address
@@ -653,14 +646,16 @@ void SleepProxy::parse_config_file(const std::string& filename)
                    &temp_ip[3]) != 4)
         {
             // If the IP parsing failed, tell the user why and exit
-            std::cerr << "Could not parse IP address on line " << line_number << "\n";
+            std::cerr << "Could not parse IP address on line " << line_number
+                      << "\n";
             shutdown();
         }
 
         // Copy from temporary storage into permanent storage
         for (unsigned int i = 0; i < 4; i++)
         {
-            devices.back().ip_address[i] = static_cast<unsigned char>(temp_ip[i]);
+            devices.back().ip_address[i] =
+                static_cast<unsigned char>(temp_ip[i]);
         }
 
         // Now read each of this device's important ports
@@ -705,9 +700,9 @@ void SleepProxy::parse_config_file(const std::string& filename)
     }
 }
 
-//=============================================================================
+//==============================================================================
 // Initializes the arp_request global variable with a template ARP request
-//=============================================================================
+//==============================================================================
 void SleepProxy::initialize_arp_request()
 {
     ethernet_ii_header* arp_req_eth_hdr = (ethernet_ii_header*)arp_request;
@@ -743,9 +738,9 @@ void SleepProxy::initialize_arp_request()
     memcpy(arp_req_arp->spa, own_ip, 4);
 }
 
-//=============================================================================
+//==============================================================================
 // Sends a wake-on-LAN frame for the specified MAC address
-//=============================================================================
+//==============================================================================
 void SleepProxy::send_wol(const unsigned char* const mac_address)
 {
     // Create the buffer in which a WOL frame will be constructed
@@ -777,10 +772,10 @@ void SleepProxy::send_wol(const unsigned char* const mac_address)
     raw_socket.write(const_cast<const char*>(wol_buffer), buf_size);
 }
 
-//=============================================================================
+//==============================================================================
 // Calls send_wol to wake a device, if enough time has passed since the last WOL
 // was sent; ASSUMES THE DEVICE ASSOCIATED WITH THE GIVEN DEVICE INDEX IS LOCKED
-//=============================================================================
+//==============================================================================
 void SleepProxy::wake_device(const unsigned int         device_index,
                              const unsigned char* const requester_mac,
                              const unsigned char* const requester_ip)
@@ -805,9 +800,9 @@ void SleepProxy::wake_device(const unsigned int         device_index,
     }
 }
 
-//=============================================================================
+//==============================================================================
 // Sends a gratuitous ARP for the specified IP address/MAC address combo
-//=============================================================================
+//==============================================================================
 void SleepProxy::send_garp(const unsigned char* ip_address,
                            const unsigned char* mac_address)
 {
@@ -850,11 +845,11 @@ void SleepProxy::send_garp(const unsigned char* ip_address,
     raw_socket.write(const_cast<const char*>(garp_buffer), buf_size);
 }
 
-//=============================================================================
+//==============================================================================
 // Sends a gratuitous ARP associating a MAC address with an IP address, if
 // enough time has passed since the last one; ASSUMES THE DEVICE ASSOCIATED WITH
 // THE GIVEN MAC ADDRESS IS LOCKED
-//=============================================================================
+//==============================================================================
 void SleepProxy::restore_arp_tables(const unsigned int         device_index,
                                     const unsigned char* const traffic_mac)
 {
@@ -879,20 +874,20 @@ void SleepProxy::restore_arp_tables(const unsigned int         device_index,
     }
 }
 
-//=============================================================================
+//==============================================================================
 // Called to parse and respond to sniffed frames
-//=============================================================================
+//==============================================================================
 void SleepProxy::handle_frame(const char* frame_buffer, unsigned int bytes_read)
 {
-    // There are currently two types of interesting traffic; ARP queries and IPv4
-    // packets.  Later we will see if this frame contains either of those things.
-    // Assume Ethernet II frames.
+    // There are currently two types of interesting traffic; ARP queries and
+    // IPv4 packets.  Later we will see if this frame contains either of those
+    // things.  Assume Ethernet II frames.
 
     // Interpret this frame as an Ethernet II frame
     ethernet_ii_header* eth_frame  = (ethernet_ii_header*)frame_buffer;
 
-    // Drop this frame if it came from the interface the proxy device is using (if
-    // it came from ourselves).  Clearly we're not interested in these.
+    // Drop this frame if it came from the interface the proxy device is using
+    // (if it came from ourselves).  Clearly we're not interested in these.
     if (memcmp((void*)eth_frame->mac_source, own_mac, 6) == 0)
     {
         return;
@@ -906,29 +901,32 @@ void SleepProxy::handle_frame(const char* frame_buffer, unsigned int bytes_read)
                    (void*)(frame_buffer + 6),
                    6) == 0)
         {
-            // If this device is marked as sleeping, update the network's ARP tables
-            // so traffic gets send directly to it now, rather than to the proxy; the
-            // device is awake so it should handle its own traffic
+            // If this device is marked as sleeping, update the network's ARP
+            // tables so traffic gets send directly to it now, rather than to
+            // the proxy; the device is awake so it should handle its own
+            // traffic
             if (devices[i].is_sleeping)
             {
-                // Device has just been detected to be awake, log this status change
+                // Device has just been detected to be awake, log this status
+                // change
                 log_device_awake(devices[i].ip_address, devices[i].mac_address);
 
                 restore_arp_tables(i);
             }
 
-            // This device can't be sleeping, because we just got a frame from it.
-            // Change status to reflect this.
+            // This device can't be sleeping, because we just got a frame from
+            // it.  Change status to reflect this.
             devices[i].is_sleeping = false;
 
             // Mark device as awake for the sleep checker thread
             devices[i].is_awake = true;
         }
-  }
+    }
 
-    // Initially interpret frame's contents as an IPv4 ARP packet; later different
-    // re-interpretations may be applied as necessary
-    arp_ipv4* arp_packet = (arp_ipv4*)(frame_buffer + sizeof(ethernet_ii_header));
+    // Initially interpret frame's contents as an IPv4 ARP packet; later
+    // different re-interpretations may be applied as necessary
+    arp_ipv4* arp_packet = (arp_ipv4*)(frame_buffer +
+                                       sizeof(ethernet_ii_header));
 
     // Ethertype for IPv4 packets
     char ipv4_type[2];
@@ -950,216 +948,241 @@ void SleepProxy::handle_frame(const char* frame_buffer, unsigned int bytes_read)
         // Is this query for a sleeping device this program is proxying for?
         for(unsigned int i = 0; i < devices.size(); i++)
         {
-            // Check the IP address this query is for against the stored IP addressess
-            // of all tracked devices
+            // Check the IP address this query is for against the stored IP
+            // addresses of all tracked devices
             if (memcmp((void*)arp_packet->tpa,
                        (void*)devices[i].ip_address,
                        4) == 0 &&
                 devices[i].is_sleeping)
             {
-                // ARP query received for a sleeping device this program is proxying
-        // for.  Send an ARP response causing the sender to direct traffic here
+                // ARP query received for a sleeping device this program is
+                // proxying for.  Send an ARP response causing the sender to
+                // direct traffic here
 
-        // Set up the buffer and establish some easy references into it
-                unsigned int buf_size = sizeof(ethernet_ii_header) + sizeof(arp_ipv4);
+                // Set up the buffer and establish some easy references into it
+                unsigned int buf_size =
+                    sizeof(ethernet_ii_header) + sizeof(arp_ipv4);
                 char response_buffer[buf_size];
 
-        ethernet_ii_header* response_eth_hdr =
-          (ethernet_ii_header*)response_buffer;
-        arp_ipv4* response_arp_hdr =
-          (arp_ipv4*)((char*)response_buffer + sizeof(ethernet_ii_header));
+                ethernet_ii_header* response_eth_hdr =
+                    (ethernet_ii_header*)response_buffer;
 
-        // Fill in Ethernet header
-        memcpy(response_eth_hdr->mac_destination, eth_frame->mac_source, 6);
-        memcpy(response_eth_hdr->mac_source, own_mac, 6);
-        memcpy(response_eth_hdr->ethertype, arp_type, 2);
+                arp_ipv4* response_arp_hdr =
+                    (arp_ipv4*)((char*)response_buffer +
+                                sizeof(ethernet_ii_header));
 
-        // Fill in the ARP packet
-        response_arp_hdr->htype[0] = 0x00;
-        response_arp_hdr->htype[1] = 0x01;
-        memcpy(response_arp_hdr->ptype, ipv4_type, 2);
-        response_arp_hdr->hlen[0] = 0x06;
-        response_arp_hdr->plen[0] = 0x04;
-        response_arp_hdr->oper[0] = 0x00;
-        response_arp_hdr->oper[1] = 0x02;
-        memcpy(response_arp_hdr->sha, own_mac, 6);
-        memcpy(response_arp_hdr->spa, arp_packet->tpa, 4);
-        memcpy(response_arp_hdr->tha, arp_packet->sha, 6);
-        memcpy(response_arp_hdr->tpa, arp_packet->spa, 4);
+                // Fill in Ethernet header
+                memcpy(response_eth_hdr->mac_destination,
+                       eth_frame->mac_source,
+                       6);
 
-        // Issue the response; this should cause the computer that queried for
-        // the sleeping device to believe this computer IS the sleeping device
-        RawSocket raw_socket;
-        raw_socket.setOutputInterface(interface_name);
-        raw_socket.write(response_buffer, buf_size);
-      }
+                memcpy(response_eth_hdr->mac_source, own_mac, 6);
+                memcpy(response_eth_hdr->ethertype, arp_type, 2);
+
+                // Fill in the ARP packet
+                response_arp_hdr->htype[0] = 0x00;
+                response_arp_hdr->htype[1] = 0x01;
+                memcpy(response_arp_hdr->ptype, ipv4_type, 2);
+                response_arp_hdr->hlen[0] = 0x06;
+                response_arp_hdr->plen[0] = 0x04;
+                response_arp_hdr->oper[0] = 0x00;
+                response_arp_hdr->oper[1] = 0x02;
+                memcpy(response_arp_hdr->sha, own_mac, 6);
+                memcpy(response_arp_hdr->spa, arp_packet->tpa, 4);
+                memcpy(response_arp_hdr->tha, arp_packet->sha, 6);
+                memcpy(response_arp_hdr->tpa, arp_packet->spa, 4);
+
+                // Issue the response; this should cause the computer that
+                // queried for the sleeping device to believe this computer IS
+                // the sleeping device
+                RawSocket raw_socket;
+                raw_socket.setOutputInterface(interface_name);
+                raw_socket.write(response_buffer, buf_size);
+            }
+        }
     }
-  }
-  // Does this frame contain an IPv4 packet?
-  else if (memcmp(eth_frame->ethertype, (void*)ipv4_type, 2) == 0)
-  {
-    // Consider this packet as an IPv4 packet
-    ipv4_header* ipv4_hdr =
-      (ipv4_header*)(frame_buffer + sizeof(ethernet_ii_header));
-
-    // Is this packet for a device this proxy is monitoring?
-    for(unsigned int i = 0; i < devices.size(); i++)
+    // Does this frame contain an IPv4 packet?
+    else if (memcmp(eth_frame->ethertype, (void*)ipv4_type, 2) == 0)
     {
-      // Compare to current device
-      if (memcmp(ipv4_hdr->destination_ip, devices[i].ip_address, 4) == 0)
-      {
-        // Is the device sleeping?
-        if (devices[i].is_sleeping)
+        // Consider this packet as an IPv4 packet
+        ipv4_header* ipv4_hdr =
+            (ipv4_header*)(frame_buffer + sizeof(ethernet_ii_header));
+
+        // Is this packet for a device this proxy is monitoring?
+        for(unsigned int i = 0; i < devices.size(); i++)
         {
-          // We've intercepted traffic for a sleeping device.  Now it needs to
-          // be determined if this traffic is important.
-
-          // Consider only TCP and UDP
-          if (*ipv4_hdr->protocol == 0x06 || *ipv4_hdr->protocol == 0x11)
-          {
-            // If this device has no important ports listed, wake it for any
-            // traffic
-            if (devices[i].ports.size() == 0)
+            // Compare to current device
+            if (memcmp(ipv4_hdr->destination_ip, devices[i].ip_address, 4) == 0)
             {
-              wake_device(i,
-                          eth_frame->mac_source,
-                          (unsigned char*)ipv4_hdr->source_ip);
-            }
-            else
-            {
-              // Figure out how long the header in this IPv4 packet is; we have
-              // to do this to know where the payload starts, to know where to
-              // pick the destination port from
-
-              // The header length in the packet indicates the number of 32-bit
-              // words, so the multiply by 4 is necessary to convert to bytes
-              unsigned short ipv4_headerlen =
-                (*(ipv4_hdr->version_headerlen) & 0x0f) * 4;
-
-              // Save a pointer to the start of the IPv4 payload
-              const unsigned char* ipv4_payload =
-                reinterpret_cast<const unsigned char*>(
-                  frame_buffer + sizeof(ethernet_ii_header) + ipv4_headerlen);
-
-              // Extract the destination port
-              unsigned short destination_port =
-                *(unsigned short*)(ipv4_payload + 2);
-
-              // Byte-swap the retrieved port if the endian-ness of this host
-              // doesn't match network byte order
-              if (endianness == Endian::LITTLE)
-              {
-                // Copy the port's two bytes
-                unsigned char byte1 = *(unsigned char*)&destination_port;
-                unsigned char byte2 = *((unsigned char*)&destination_port + 1);
-
-                // Copy the two bytes back in, in reverse order
-                memcpy((unsigned char*)&destination_port,     &byte2, 1);
-                memcpy((unsigned char*)&destination_port + 1, &byte1, 1);
-              }
-
-              // Loop over all this device's listed important ports, seeing if
-              // any of them match the port to which this packet is destined
-              for (std::vector<unsigned short>::iterator iter =
-                     devices[i].ports.begin();
-                   iter != devices[i].ports.end();
-                   ++iter)
-              {
-                // If the packet is destined for an important port, wake the
-                // device
-                if (*iter == destination_port)
+                // Is the device sleeping?
+                if (devices[i].is_sleeping)
                 {
-                  wake_device(i,
-                              eth_frame->mac_source,
-                              (unsigned char*)ipv4_hdr->source_ip);
-                  break;
+                    // We've intercepted traffic for a sleeping device.  Now it
+                    // needs to be determined if this traffic is important.
+
+                    // Consider only TCP and UDP
+                    if (*ipv4_hdr->protocol == 0x06 ||
+                        *ipv4_hdr->protocol == 0x11)
+                    {
+                        // If this device has no important ports listed, wake it
+                        // for any traffic
+                        if (devices[i].ports.size() == 0)
+                        {
+                            wake_device(i,
+                                        eth_frame->mac_source,
+                                        (unsigned char*)ipv4_hdr->source_ip);
+                        }
+                        else
+                        {
+                            // Figure out how long the header in this IPv4
+                            // packet is; we have to do this to know where the
+                            // payload starts, to know where to pick the
+                            // destination port from
+
+                            // The header length in the packet indicates the
+                            // number of 32-bit words, so the multiply by 4 is
+                            // necessary to convert to bytes
+                            unsigned short ipv4_headerlen =
+                                (*(ipv4_hdr->version_headerlen) & 0x0f) * 4;
+
+                            // Save a pointer to the start of the IPv4 payload
+                            const unsigned char* ipv4_payload =
+                                reinterpret_cast<const unsigned char*>(
+                                    frame_buffer + sizeof(ethernet_ii_header) +
+                                    ipv4_headerlen);
+
+                            // Extract the destination port
+                            unsigned short destination_port =
+                                *(unsigned short*)(ipv4_payload + 2);
+
+                            // Byte-swap the retrieved port if the endian-ness
+                            // of this host doesn't match network byte order
+                            if (endianness == Endian::LITTLE)
+                            {
+                                // Copy the port's two bytes
+                                unsigned char byte1 =
+                                    *(unsigned char*)&destination_port;
+                                unsigned char byte2 =
+                                    *((unsigned char*)&destination_port + 1);
+
+                                // Copy the two bytes back in, in reverse order
+
+                                memcpy((unsigned char*)&destination_port,
+                                       &byte2,
+                                       1);
+
+                                memcpy((unsigned char*)&destination_port + 1,
+                                       &byte1,
+                                       1);
+                            }
+
+                            // Loop over all this device's listed important
+                            // ports, seeing if any of them match the port to
+                            // which this packet is destined
+                            for (std::vector<unsigned short>::iterator iter =
+                                     devices[i].ports.begin();
+                                 iter != devices[i].ports.end();
+                                 ++iter)
+                            {
+                                // If the packet is destined for an important
+                                // port, wake the device
+                                if (*iter == destination_port)
+                                {
+                                    wake_device(
+                                        i,
+                                        eth_frame->mac_source,
+                                        (unsigned char*)ipv4_hdr->source_ip);
+
+                                    break;
+                                }
+                            }
+                        }
+                    }
                 }
-              }
+                else
+                {
+                    // We've intercepted traffic for a device that is awake.
+                    // This means the device that sent this traffic still
+                    // believes it should send data to the proxy, when it should
+                    // be sending data to its intended destination.  Attempt to
+                    // remedy this situation by broadcasting a gratuitous ARP
+                    // that should inform the sender of who they should really
+                    // be sending to.
+                    restore_arp_tables(i, eth_frame->mac_source);
+                }
             }
-          }
         }
-        else
-        {
-          // We've intercepted traffic for a device that is awake.  This means
-          // the device that sent this traffic still believes it should send
-          // data to the proxy, when it should be sending data to its intended
-          // destination.  Attempt to remedy this situation by broadcasting a
-          // gratuitous ARP that should inform the sender of who they should
-          // really be sending to.
-          restore_arp_tables(i, eth_frame->mac_source);
-        }
-      }
     }
-  }
 }
 
-//=============================================================================
+//==============================================================================
 // Sets the sleep status of all monitored devices based on how they've responded
 // to prior sleep checks
-//=============================================================================
+//==============================================================================
 void SleepProxy::set_sleep_status()
 {
-  // See which devices have yet to respond.  The ones that haven't responded are
-  // deemed asleep.
+    // See which devices have yet to respond.  The ones that haven't responded
+    // are deemed asleep.
 
-  // Check all devices
-  for(unsigned int i = 0; i < devices.size(); i++)
-  {
-    // Did this device just fall asleep?
-    if (!devices[i].is_sleeping && !devices[i].is_awake)
+    // Check all devices
+    for(unsigned int i = 0; i < devices.size(); i++)
     {
-      // Log the fact that this device has fallen asleep
-      log_device_asleep(devices[i].ip_address, devices[i].mac_address);
+        // Did this device just fall asleep?
+        if (!devices[i].is_sleeping && !devices[i].is_awake)
+        {
+            // Log the fact that this device has fallen asleep
+            log_device_asleep(devices[i].ip_address, devices[i].mac_address);
 
-      // Since this device is now asleep, this proxy should intercept all
-      // traffic bound for it.  To accomplish this, a single gratuitous ARP
-      // associating this proxy device's MAC with the IP address of the device
-      // that has just fallen asleep can be issued.
-      if (aggressive_garp)
-      {
-        log_issuing_garp(devices[i].ip_address, (const unsigned char*)own_mac);
-        send_garp(devices[i].ip_address, (const unsigned char*)own_mac);
-      }
+            // Since this device is now asleep, this proxy should intercept all
+            // traffic bound for it.  To accomplish this, a single gratuitous
+            // ARP associating this proxy device's MAC with the IP address of
+            // the device that has just fallen asleep can be issued.
+            if (aggressive_garp)
+            {
+                log_issuing_garp(
+                    devices[i].ip_address, (const unsigned char*)own_mac);
+                send_garp(devices[i].ip_address, (const unsigned char*)own_mac);
+            }
+        }
+
+        // Record the current sleep state
+        devices[i].is_sleeping = !devices[i].is_awake;
     }
-
-    // Record the current sleep state
-    devices[i].is_sleeping = !devices[i].is_awake;
-  }
 }
 
-//=============================================================================
+//==============================================================================
 // Issues sleep check messages for all monitored devices
-//=============================================================================
+//==============================================================================
 void SleepProxy::issue_sleep_checks()
 {
-  // Create a socket to issue requests
-  RawSocket query_socket;
-  query_socket.setOutputInterface(interface_name);
+    // Create a socket to issue requests
+    RawSocket query_socket;
+    query_socket.setOutputInterface(interface_name);
 
-  // Get a pointer to the ARP section of the request
-  arp_ipv4* arp_req_arp =
-    (arp_ipv4*)(arp_request + sizeof(ethernet_ii_header));
+    // Get a pointer to the ARP section of the request
+    arp_ipv4* arp_req_arp =
+        (arp_ipv4*)(arp_request + sizeof(ethernet_ii_header));
 
-  // ARP request to all devices
-  for(unsigned int i = 0; i < devices.size(); i++)
-  {
-    // Mark the device as not awake; if it really is awake, the other thread
-    // will receive a response to the coming ARP request and mark it as such
-    devices[i].is_awake = false;
+    // ARP request to all devices
+    for(unsigned int i = 0; i < devices.size(); i++)
+    {
+        // Mark the device as not awake; if it really is awake, the other thread
+        // will receive a response to the coming ARP request and mark it as such
+        devices[i].is_awake = false;
 
-    // Update buffer with current device's IP and MAC
-    memcpy(arp_req_arp->tha, devices[i].mac_address, 6);
-    memcpy(arp_req_arp->tpa, devices[i].ip_address,  4);
+        // Update buffer with current device's IP and MAC
+        memcpy(arp_req_arp->tha, devices[i].mac_address, 6);
+        memcpy(arp_req_arp->tpa, devices[i].ip_address,  4);
 
-    // Issue the request
-    query_socket.write((const char*)arp_request,
-                       sizeof(ethernet_ii_header) + sizeof(arp_ipv4));
-  }
+        // Issue the request
+        query_socket.write((const char*)arp_request,
+                           sizeof(ethernet_ii_header) + sizeof(arp_ipv4));
+    }
 }
 
-//=============================================================================
+//==============================================================================
 // Writes the PID of the calling process to file
-//=============================================================================
+//==============================================================================
 void SleepProxy::writePidToFile(const std::string& pid_filename)
 {
     std::ofstream out_stream(pid_filename.c_str());
