@@ -1,6 +1,3 @@
-// LAN sleep proxy
-// Leigh Garbs
-
 // This program acts as a sleep proxy for the attached LAN.  It attempts to
 // recognize sleeping LAN devices and wake them if they have important traffic
 // inbound.
@@ -32,12 +29,6 @@
 #include "ethernet_ii_header.h"
 #include "ipv4_header.h"
 #include "tcp_header.h"
-
-// This doesn't compile anywhere but Linux but here are the Linux-specific
-// headers anyway
-#if defined LINUX
-#include <linux/if_ether.h>
-#endif
 
 const unsigned int SleepProxy::PARSING_BUFFER_LENGTH = 1000;
 
