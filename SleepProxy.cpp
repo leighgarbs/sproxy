@@ -513,70 +513,17 @@ void SleepProxy::parse_config_file(const std::string& filename)
             continue;
         }
 
-        // If we just read a properly formatted MAC address, the token's length
-        // will be 12 characters (2 for each byte) plus 5 colons
-        if (token.size() != 17)
-        {
-            // If the MAC parsing failed, tell the user why and exit
-            std::cerr << "Error in " << filename << "\n"
-                      << "Could not parse MAC address on line " << line_number
-                      << "\n";
-            shutdown();
-        }
-
-        // Now that we know we have a new device to monitor, push a new Device
-        // onto the list of devices to track it
+        // We might have a new device to monitor so start trying to collect
+        // information on it
         Device new_device;
-        devices.push_back(new_device);
 
-        // Scan the device's MAC address into temporary storage
-        int temp_mac[6];
-        if (sscanf(token.c_str(),
-                   "%2x:%2x:%2x:%2x:%2x:%2x",
-                   &temp_mac[0],
-                   &temp_mac[1],
-                   &temp_mac[2],
-                   &temp_mac[3],
-                   &temp_mac[4],
-                   &temp_mac[5]) != 6)
-        {
-            // If the MAC parsing failed, tell the user why and exit
-            std::cerr << "Error in " << filename << "\n"
-                      << "Could not parse MAC address on line " << line_number
-                      << "\n";
-            shutdown();
-        }
+        // Grab the device's MAC address
+        // TODO: add error handling
+        new_device.mac_address = token;
 
-        // Copy from temporary storage into permanent storage
-        for (unsigned int i = 0; i < 6; i++)
-        {
-            devices.back().mac_address[i] =
-                static_cast<unsigned char>(temp_mac[i]);
-        }
-
-        // Read in the device's IPv4 address
-        config_line >> token;
-
-        unsigned int temp_ip[4];
-        if (sscanf(token.c_str(),
-                   "%u.%u.%u.%u",
-                   &temp_ip[0],
-                   &temp_ip[1],
-                   &temp_ip[2],
-                   &temp_ip[3]) != 4)
-        {
-            // If the IP parsing failed, tell the user why and exit
-            std::cerr << "Could not parse IP address on line " << line_number
-                      << "\n";
-            shutdown();
-        }
-
-        // Copy from temporary storage into permanent storage
-        for (unsigned int i = 0; i < 4; i++)
-        {
-            devices.back().ip_address[i] =
-                static_cast<unsigned char>(temp_ip[i]);
-        }
+        // Grab the device's IP address
+        // TODO: add error handling
+        config_line >> new_device.ip_address;
 
         // Now read each of this device's important ports
         while(!config_line.eof())
@@ -604,19 +551,15 @@ void SleepProxy::parse_config_file(const std::string& filename)
             }
 
             // Add the port to the device's list
-            devices.back().ports.push_back(port);
+            new_device.ports.push_back(port);
         }
 
         // Initially mark the device as awake; if it really isn't awake, this
         // program will figure it out shortly
-        devices.back().is_sleeping = false;
-        devices.back().is_awake    = true;
+        new_device.is_sleeping = false;
+        new_device.is_awake    = true;
 
-        // Last WOL timestamp init
-        devices.back().last_wol_timestamp = 0;
-
-        // Last gratuitous ARP timestamp init
-        devices.back().last_garp_timestamp = 0;
+        devices.push_back(new_device);
     }
 }
 
