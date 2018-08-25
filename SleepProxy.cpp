@@ -463,14 +463,7 @@ void SleepProxy::parse_default_file(const std::string& filename)
         }
         else if (left_side == "AGGRESSIVE_GARP")
         {
-            if (right_side == "yes")
-            {
-                aggressive_garp = true;
-            }
-            else
-            {
-                aggressive_garp = false;
-            }
+            aggressive_garp = right_side == "yes";
         }
     }
 }
