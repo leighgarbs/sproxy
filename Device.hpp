@@ -5,6 +5,7 @@
 
 #include "Ipv4Address.hpp"
 #include "MacAddress.hpp"
+#include "PosixTimespec.hpp"
 
 // Details all needed information about a device on the LAN this program may
 // proxy for
@@ -27,10 +28,10 @@ struct Device
   std::vector<unsigned short> ports;
 
   // Last time this device was issued a WOL frame
-  time_t last_wol_timestamp;
+  PosixTimespec last_wol_timestamp;
 
   // Last time a gratuitous ARP was issued on behalf of this device
-  time_t last_garp_timestamp;
+  PosixTimespec last_garp_timestamp;
 };
 
 #endif

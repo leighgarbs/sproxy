@@ -25,6 +25,7 @@
 #include "Ipv4Address.hpp"
 #include "Log.hpp"
 #include "MacAddress.hpp"
+#include "PosixClock.hpp"
 #include "PosixTimespec.hpp"
 #include "RawSocket.hpp"
 #include "arp_ipv4.h"
@@ -42,6 +43,7 @@ const unsigned int SleepProxy::PARSING_BUFFER_LENGTH = 1000;
 //=============================================================================
 SleepProxy::SleepProxy(int argc, char** argv, const PosixTimespec& tp) :
     FixedRateProgram(argc, argv, tp),
+    realtime_clock(CLOCK_MONOTONIC_RAW),
     default_filename("/etc/sproxy/config"),
     config_filename("/etc/sproxy/devices"),
     log_filename("/var/log/sproxy.log"),
@@ -113,8 +115,6 @@ void SleepProxy::step()
     // Is it time to perform another sleep check?
     if (time_since_lsc >= sleep_check_period)
     {
-        // Okay, we need to do a sleep check then
-
         // Reset sleep check timers
         last_sleep_check = frame_start;
         time_since_lsc = 0;
@@ -708,10 +708,11 @@ void SleepProxy::wake_device(const unsigned int device_index,
                              const Ipv4Address& requester_ip)
 {
     // Obtain current time
-    time_t current_time = time(0);
+    PosixTimespec current_time;
+    realtime_clock.getTime(current_time);
 
     // Issue another WOL if it's been a second or more since the last WOL
-    if (current_time - devices[device_index].last_wol_timestamp >= 1)
+    if (current_time - devices[device_index].last_wol_timestamp >= 1.0)
     {
         // Log the fact that we're going to issue a WOL
         log_issuing_wol(devices[device_index].mac_address,
@@ -781,11 +782,12 @@ void SleepProxy::restore_arp_tables(const unsigned int device_index,
                                     const MacAddress&  traffic_mac)
 {
     // Obtain current time
-    time_t current_time = time(0);
+    PosixTimespec current_time;
+    realtime_clock.getTime(current_time);
 
     // Issue another gratuitous ARP if it's been a second or more since the last
     // one
-    if (current_time - devices[device_index].last_garp_timestamp >= 1)
+    if (current_time - devices[device_index].last_garp_timestamp >= 1.0)
     {
         // Log the fact that we're going to issue a gratuitous ARP
         log_issuing_garp(devices[device_index].ip_address,

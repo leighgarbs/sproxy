@@ -12,6 +12,7 @@
 #include "Ipv4Address.hpp"
 #include "Log.hpp"
 #include "MacAddress.hpp"
+#include "PosixClock.hpp"
 #include "PosixTimespec.hpp"
 #include "RawSocket.hpp"
 #include "arp_ipv4.h"
@@ -99,6 +100,8 @@ private:
 
     static void writePidToFile(const std::string& pid_filename);
 
+    // Increments at real time; should be set to set to CLOCK_MONOTONIC_RAW
+    PosixClock realtime_clock;
 
     RawSocket sniff_socket;
 
