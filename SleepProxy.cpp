@@ -672,7 +672,7 @@ void SleepProxy::send_wol(const MacAddress& mac_address)
 {
     // Create the buffer in which a WOL frame will be constructed
     unsigned int buf_size = sizeof(ethernet_ii_header) + 102;
-    char wol_buffer[buf_size];
+    unsigned char wol_buffer[buf_size];
 
     ethernet_ii_header* eth_hdr = (ethernet_ii_header*)wol_buffer;
 
@@ -682,7 +682,7 @@ void SleepProxy::send_wol(const MacAddress& mac_address)
     eth_hdr->ethertype[0] = 0x08;
     eth_hdr->ethertype[1] = 0x42;
 
-    char* wol_payload = wol_buffer + sizeof(ethernet_ii_header);
+    unsigned char* wol_payload = wol_buffer + sizeof(ethernet_ii_header);
 
     // Add 6 bytes of 0xff
     memset(wol_payload, 0xff, 6);
@@ -696,7 +696,7 @@ void SleepProxy::send_wol(const MacAddress& mac_address)
     // The WOL frame is complete; send it
     RawSocket raw_socket;
     raw_socket.setOutputInterface(interface_name);
-    raw_socket.write(const_cast<const char*>(wol_buffer), buf_size);
+    raw_socket.write(const_cast<const unsigned char*>(wol_buffer), buf_size);
 }
 
 //==============================================================================
@@ -735,7 +735,7 @@ void SleepProxy::send_garp(const Ipv4Address& ip_address,
 {
     // Allocate a buffer for the ARP
     unsigned int buf_size = sizeof(ethernet_ii_header) + sizeof(arp_ipv4);
-    char garp_buffer[buf_size];
+    unsigned char garp_buffer[buf_size];
 
     ethernet_ii_header* eth_hdr = (ethernet_ii_header*)garp_buffer;
 
@@ -769,7 +769,7 @@ void SleepProxy::send_garp(const Ipv4Address& ip_address,
     // The ARP is complete; send it
     RawSocket raw_socket;
     raw_socket.setOutputInterface(interface_name);
-    raw_socket.write(const_cast<const char*>(garp_buffer), buf_size);
+    raw_socket.write(garp_buffer, buf_size);
 }
 
 //==============================================================================
@@ -804,7 +804,8 @@ void SleepProxy::restore_arp_tables(const unsigned int device_index,
 //==============================================================================
 // Called to parse and respond to sniffed frames
 //==============================================================================
-void SleepProxy::handle_frame(const char* frame_buffer, unsigned int bytes_read)
+void SleepProxy::handle_frame(const unsigned char* frame_buffer,
+                              unsigned int         bytes_read)
 {
     // There are currently two types of interesting traffic; ARP queries and
     // IPv4 packets.  Later we will see if this frame contains either of those
@@ -889,7 +890,7 @@ void SleepProxy::handle_frame(const char* frame_buffer, unsigned int bytes_read)
                 // Set up the buffer and establish some easy references into it
                 unsigned int buf_size =
                     sizeof(ethernet_ii_header) + sizeof(arp_ipv4);
-                char response_buffer[buf_size];
+                unsigned char response_buffer[buf_size];
 
                 ethernet_ii_header* response_eth_hdr =
                     (ethernet_ii_header*)response_buffer;
@@ -1103,7 +1104,7 @@ void SleepProxy::issue_sleep_checks()
         devices[i].ip_address.writeRaw(arp_req_arp->tpa);
 
         // Issue the request
-        query_socket.write((const char*)arp_request,
+        query_socket.write(arp_request,
                            sizeof(ethernet_ii_header) + sizeof(arp_ipv4));
     }
 }

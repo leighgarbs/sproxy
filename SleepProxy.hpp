@@ -90,7 +90,8 @@ private:
     void restore_arp_tables(const unsigned int device_index,
                             const MacAddress&  traffic_mac);
 
-    void handle_frame(const char* frame_buffer, unsigned int bytes_read);
+    void handle_frame(const unsigned char* frame_buffer,
+                      unsigned int         bytes_read);
 
     void set_sleep_status();
 
@@ -125,7 +126,7 @@ private:
     static const unsigned int ETHERNET_FRAME_LENGTH = 1514;
 
     // Sniffed frames are read into this buffer
-    char frame_buffer[ETHERNET_FRAME_LENGTH];
+    unsigned char frame_buffer[ETHERNET_FRAME_LENGTH];
 
     // Length of the input buffers used during config and default file parsing
     static const unsigned int PARSING_BUFFER_LENGTH;
@@ -136,7 +137,7 @@ private:
 
     // Stores a template ARP request used when checking if monitored hosts are
     // asleep
-    char arp_request[sizeof(ethernet_ii_header) + sizeof(arp_ipv4)];
+    unsigned char arp_request[sizeof(ethernet_ii_header) + sizeof(arp_ipv4)];
 
     // Stores the MAC of the device this proxy is using to monitor network
     // traffic
