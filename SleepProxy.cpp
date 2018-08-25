@@ -22,12 +22,15 @@
 #include "SleepProxy.hpp"
 
 #include "Endian.hpp"
+#include "Ipv4Address.hpp"
 #include "Log.hpp"
+#include "MacAddress.hpp"
 #include "PosixTimespec.hpp"
 #include "RawSocket.hpp"
 #include "arp_ipv4.h"
 #include "ethernet_ii_header.h"
 #include "ipv4_header.h"
+#include "miscNetworking.hpp"
 #include "tcp_header.h"
 
 const unsigned int SleepProxy::PARSING_BUFFER_LENGTH = 1000;
@@ -73,7 +76,8 @@ SleepProxy::SleepProxy(int argc, char** argv, const PosixTimespec& tp) :
     // For some of the things this proxy will do, it needs to know the MAC
     // address and IP address of the interface it will be using.  Obtain this
     // information here.
-    obtain_own_mac_and_ip();
+    miscNetworking::getMacAddress(interface_name,  own_mac);
+    miscNetworking::getIpv4Address(interface_name, own_ip);
 
     // Determine endian-ness of this host
     endianness = Endian::getEndianness();
@@ -89,8 +93,6 @@ SleepProxy::SleepProxy(int argc, char** argv, const PosixTimespec& tp) :
     log.write("Service starting");
 }
 
-//==============================================================================
-//
 //==============================================================================
 SleepProxy::~SleepProxy()
 {
@@ -296,64 +298,46 @@ void SleepProxy::shutdown()
 //==============================================================================
 // Issuing a WOL
 //==============================================================================
-void SleepProxy::log_issuing_wol(const unsigned char* const mac_address,
-                                 const unsigned char* const ip_address,
-                                 const unsigned char* const requesting_mac,
-                                 const unsigned char* const requesting_ip)
+void SleepProxy::log_issuing_wol(const MacAddress&  mac_address,
+                                 const Ipv4Address& ip_address,
+                                 const MacAddress&  requesting_mac,
+                                 const Ipv4Address& requesting_ip)
 {
-    // Parse target mac into a string
-    std::string mac_address_str;
-    mac_to_string(mac_address, mac_address_str);
+    std::ostringstream outstream;
+    outstream << "Issuing WOL for " << mac_address << " (" << ip_address
+              << ") on behalf of " << requesting_mac << " (" << requesting_ip
+              << ")";
 
-    // Parse target ip into a string
-    std::string ip_address_str;
-    ip_to_string(ip_address, ip_address_str);
-
-    // Parse requesting mac into a string
-    std::string requesting_mac_str;
-    mac_to_string(requesting_mac, requesting_mac_str);
-
-    std::string requesting_ip_str;
-    ip_to_string(requesting_ip, requesting_ip_str);
-
-    // Issue the log message
-    log.write("Issuing WOL for " + mac_address_str + " (" + ip_address_str
-              + ") on behalf of " + requesting_mac_str + " (" + requesting_ip_str
-              + ")");
+    log.write(outstream.str());
 }
 
 //==============================================================================
 // Issuing a gratuitous ARP
 //==============================================================================
-void SleepProxy::log_issuing_garp(const unsigned char* const ip_address,
-                                  const unsigned char* const mac_address,
-                                  const unsigned char* const traffic_mac)
+void SleepProxy::log_issuing_garp(const Ipv4Address& ip_address,
+                                  const MacAddress&  mac_address,
+                                  const MacAddress&  traffic_mac)
 {
-    std::string mac_address_str;
+    std::ostringstream outstream;
+    outstream << "Issuing gratuitous ARP associating " << ip_address
+              << " with ";
 
     // See if the MAC address we're dealing with is the proxy's MAC address, and
     // if it is, we'll print 'self' in the log in place of the proxy's MAC,
     // because this is easier to understand
-    if (memcmp(own_mac, mac_address, 6) == 0)
+    if (own_mac == mac_address)
     {
-        mac_address_str = "self";
+        outstream << "self";
     }
     else
     {
-        // Parse mac address into a string
-        mac_to_string(mac_address, mac_address_str);
+        outstream << mac_address;
     }
 
-    // Parse IP address into a string
-    std::string ip_address_str;
-    ip_to_string(ip_address, ip_address_str);
-
     // Define message now, may be appended to later
-    std::string message = "Issuing gratuitous ARP associating " +
-        ip_address_str + " with " + mac_address_str;
 
     // If a traffic mac was given, incorporate that into the log message
-    if (traffic_mac)
+    /*if (traffic_mac)
     {
         // Parse traffic mac into a string
         std::string traffic_mac_str;
@@ -361,48 +345,36 @@ void SleepProxy::log_issuing_garp(const unsigned char* const ip_address,
 
         // Append to previously defined message
         message += " on behalf of " + traffic_mac_str;
-    }
+        }*/
 
     // Issue the log message
-    log.write(message);
+    log.write(outstream.str());
 }
 
 //==============================================================================
 // Device has awoken
 //==============================================================================
-void SleepProxy::log_device_awake(const unsigned char* const ip_address,
-                                  const unsigned char* const mac_address)
+void SleepProxy::log_device_awake(const Ipv4Address& ip_address,
+                                  const MacAddress&  mac_address)
 {
-    // Parse mac into string
-    std::string mac_address_str;
-    mac_to_string(mac_address, mac_address_str);
+    std::ostringstream message_stream;
+    message_stream << "Device " << mac_address << " (" << ip_address
+                   << ") is awake";
 
-    // Parse IP address into string
-    std::string ip_address_str;
-    ip_to_string(ip_address, ip_address_str);
-
-    // Issue the log message
-    log.write(
-        "Device " + mac_address_str + " (" + ip_address_str + ") is awake");
+    log.write(message_stream.str());
 }
 
 //==============================================================================
 // Device has fallen asleep
 //==============================================================================
-void SleepProxy::log_device_asleep(const unsigned char* const ip_address,
-                                   const unsigned char* const mac_address)
+void SleepProxy::log_device_asleep(const Ipv4Address& ip_address,
+                                   const MacAddress&  mac_address)
 {
-    // Parse mac into string
-    std::string mac_address_str;
-    mac_to_string(mac_address, mac_address_str);
+    std::ostringstream message_stream;
+    message_stream << "Device " << mac_address << " (" << ip_address
+                   << ") is asleep";
 
-    // Parse IP address into string
-    std::string ip_address_str;
-    ip_to_string(ip_address, ip_address_str);
-
-    // Issue the log message
-    log.write(
-        "Device " + mac_address_str + " (" + ip_address_str + ") is asleep");
+    log.write(message_stream.str());
 }
 
 //==============================================================================
@@ -668,7 +640,7 @@ void SleepProxy::initialize_arp_request()
     memset(arp_req_eth_hdr->mac_destination, 0xff, 6);
 
     // Set source MAC
-    memcpy(arp_req_eth_hdr->mac_source, own_mac, 6);
+    own_mac.writeRaw(arp_req_eth_hdr->mac_source);
 
     // Set Ethertype
     arp_req_eth_hdr->ethertype[0] = 0x08;
@@ -687,16 +659,16 @@ void SleepProxy::initialize_arp_request()
     arp_req_arp->oper[1] = 0x01;
 
     // Set source hardware address
-    memcpy(arp_req_arp->sha, own_mac, 6);
+    own_mac.writeRaw(arp_req_arp->sha);
 
     // Set source protocol address
-    memcpy(arp_req_arp->spa, own_ip, 4);
+    own_ip.writeRaw(arp_req_arp->spa);
 }
 
 //==============================================================================
 // Sends a wake-on-LAN frame for the specified MAC address
 //==============================================================================
-void SleepProxy::send_wol(const unsigned char* const mac_address)
+void SleepProxy::send_wol(const MacAddress& mac_address)
 {
     // Create the buffer in which a WOL frame will be constructed
     unsigned int buf_size = sizeof(ethernet_ii_header) + 102;
@@ -705,7 +677,7 @@ void SleepProxy::send_wol(const unsigned char* const mac_address)
     ethernet_ii_header* eth_hdr = (ethernet_ii_header*)wol_buffer;
 
     // Fill out Ethernet header
-    memcpy(eth_hdr->mac_source, own_mac, 6);
+    own_mac.writeRaw(eth_hdr->mac_source);
     memset(eth_hdr->mac_destination, 0xff, 6);
     eth_hdr->ethertype[0] = 0x08;
     eth_hdr->ethertype[1] = 0x42;
@@ -718,7 +690,7 @@ void SleepProxy::send_wol(const unsigned char* const mac_address)
     // Add 16 repetitions of the MAC address to wake
     for (unsigned int i = 1; i <= 16; i++)
     {
-        memcpy(wol_payload + 6 * i, mac_address, 6);
+        mac_address.writeRaw(wol_payload + 6 * i);
     }
 
     // The WOL frame is complete; send it
@@ -731,9 +703,9 @@ void SleepProxy::send_wol(const unsigned char* const mac_address)
 // Calls send_wol to wake a device, if enough time has passed since the last WOL
 // was sent; ASSUMES THE DEVICE ASSOCIATED WITH THE GIVEN DEVICE INDEX IS LOCKED
 //==============================================================================
-void SleepProxy::wake_device(const unsigned int         device_index,
-                             const unsigned char* const requester_mac,
-                             const unsigned char* const requester_ip)
+void SleepProxy::wake_device(const unsigned int device_index,
+                             const MacAddress&  requester_mac,
+                             const Ipv4Address& requester_ip)
 {
     // Obtain current time
     time_t current_time = time(0);
@@ -758,8 +730,8 @@ void SleepProxy::wake_device(const unsigned int         device_index,
 //==============================================================================
 // Sends a gratuitous ARP for the specified IP address/MAC address combo
 //==============================================================================
-void SleepProxy::send_garp(const unsigned char* ip_address,
-                           const unsigned char* mac_address)
+void SleepProxy::send_garp(const Ipv4Address& ip_address,
+                           const MacAddress&  mac_address)
 {
     // Allocate a buffer for the ARP
     unsigned int buf_size = sizeof(ethernet_ii_header) + sizeof(arp_ipv4);
@@ -768,7 +740,7 @@ void SleepProxy::send_garp(const unsigned char* ip_address,
     ethernet_ii_header* eth_hdr = (ethernet_ii_header*)garp_buffer;
 
     // Fill out Ethernet header
-    memcpy(eth_hdr->mac_source, own_mac, 6);
+    own_mac.writeRaw(eth_hdr->mac_source);
     memset(eth_hdr->mac_destination, 0xff, 6);
     eth_hdr->ethertype[0] = 0x08;
     eth_hdr->ethertype[1] = 0x06;
@@ -788,11 +760,11 @@ void SleepProxy::send_garp(const unsigned char* ip_address,
     arp_hdr->oper[0] = 0x00;
     arp_hdr->oper[1] = 0x02;
 
-    memcpy(arp_hdr->sha, mac_address, 6);
-    memcpy(arp_hdr->tha, mac_address, 6);
+    mac_address.writeRaw(arp_hdr->sha);
+    mac_address.writeRaw(arp_hdr->tha);
 
-    memcpy(arp_hdr->spa, ip_address, 4);
-    memcpy(arp_hdr->tpa, ip_address, 4);
+    ip_address.writeRaw(arp_hdr->spa);
+    ip_address.writeRaw(arp_hdr->tpa);
 
     // The ARP is complete; send it
     RawSocket raw_socket;
@@ -805,8 +777,8 @@ void SleepProxy::send_garp(const unsigned char* ip_address,
 // enough time has passed since the last one; ASSUMES THE DEVICE ASSOCIATED WITH
 // THE GIVEN MAC ADDRESS IS LOCKED
 //==============================================================================
-void SleepProxy::restore_arp_tables(const unsigned int         device_index,
-                                    const unsigned char* const traffic_mac)
+void SleepProxy::restore_arp_tables(const unsigned int device_index,
+                                    const MacAddress&  traffic_mac)
 {
     // Obtain current time
     time_t current_time = time(0);
@@ -843,7 +815,9 @@ void SleepProxy::handle_frame(const char* frame_buffer, unsigned int bytes_read)
 
     // Drop this frame if it came from the interface the proxy device is using
     // (if it came from ourselves).  Clearly we're not interested in these.
-    if (memcmp((void*)eth_frame->mac_source, own_mac, 6) == 0)
+    MacAddress mac_source;
+    mac_source.readRaw(eth_frame->mac_source);
+    if (mac_source == own_mac)
     {
         return;
     }
@@ -852,9 +826,7 @@ void SleepProxy::handle_frame(const char* frame_buffer, unsigned int bytes_read)
     // thought to be sleeping, change it's status to non-sleeping.
     for (unsigned int i = 0; i < devices.size(); i++)
     {
-        if (memcmp((void*)devices[i].mac_address,
-                   (void*)(frame_buffer + 6),
-                   6) == 0)
+        if (devices[i].mac_address == mac_source)
         {
             // If this device is marked as sleeping, update the network's ARP
             // tables so traffic gets send directly to it now, rather than to
@@ -866,7 +838,8 @@ void SleepProxy::handle_frame(const char* frame_buffer, unsigned int bytes_read)
                 // change
                 log_device_awake(devices[i].ip_address, devices[i].mac_address);
 
-                restore_arp_tables(i);
+                // TODO: re-enable this
+                //restore_arp_tables(i);
             }
 
             // This device can't be sleeping, because we just got a frame from
@@ -905,10 +878,9 @@ void SleepProxy::handle_frame(const char* frame_buffer, unsigned int bytes_read)
         {
             // Check the IP address this query is for against the stored IP
             // addresses of all tracked devices
-            if (memcmp((void*)arp_packet->tpa,
-                       (void*)devices[i].ip_address,
-                       4) == 0 &&
-                devices[i].is_sleeping)
+            Ipv4Address tpa;
+            tpa.readRaw(arp_packet->tpa);
+            if (tpa == devices[i].ip_address)
             {
                 // ARP query received for a sleeping device this program is
                 // proxying for.  Send an ARP response causing the sender to
@@ -931,7 +903,7 @@ void SleepProxy::handle_frame(const char* frame_buffer, unsigned int bytes_read)
                        eth_frame->mac_source,
                        6);
 
-                memcpy(response_eth_hdr->mac_source, own_mac, 6);
+                own_mac.writeRaw(response_eth_hdr->mac_source);
                 memcpy(response_eth_hdr->ethertype, arp_type, 2);
 
                 // Fill in the ARP packet
@@ -942,7 +914,7 @@ void SleepProxy::handle_frame(const char* frame_buffer, unsigned int bytes_read)
                 response_arp_hdr->plen[0] = 0x04;
                 response_arp_hdr->oper[0] = 0x00;
                 response_arp_hdr->oper[1] = 0x02;
-                memcpy(response_arp_hdr->sha, own_mac, 6);
+                own_mac.writeRaw(response_arp_hdr->sha);
                 memcpy(response_arp_hdr->spa, arp_packet->tpa, 4);
                 memcpy(response_arp_hdr->tha, arp_packet->sha, 6);
                 memcpy(response_arp_hdr->tpa, arp_packet->spa, 4);
@@ -967,7 +939,9 @@ void SleepProxy::handle_frame(const char* frame_buffer, unsigned int bytes_read)
         for(unsigned int i = 0; i < devices.size(); i++)
         {
             // Compare to current device
-            if (memcmp(ipv4_hdr->destination_ip, devices[i].ip_address, 4) == 0)
+            Ipv4Address destination_ip;
+            destination_ip.readRaw(ipv4_hdr->destination_ip);
+            if (destination_ip == devices[i].ip_address)
             {
                 // Is the device sleeping?
                 if (devices[i].is_sleeping)
@@ -983,9 +957,9 @@ void SleepProxy::handle_frame(const char* frame_buffer, unsigned int bytes_read)
                         // for any traffic
                         if (devices[i].ports.size() == 0)
                         {
-                            wake_device(i,
-                                        eth_frame->mac_source,
-                                        (unsigned char*)ipv4_hdr->source_ip);
+                            Ipv4Address source_ip;
+                            source_ip.readRaw(ipv4_hdr->source_ip);
+                            wake_device(i, mac_source, source_ip);
                         }
                         else
                         {
@@ -1043,10 +1017,9 @@ void SleepProxy::handle_frame(const char* frame_buffer, unsigned int bytes_read)
                                 // port, wake the device
                                 if (*iter == destination_port)
                                 {
-                                    wake_device(
-                                        i,
-                                        eth_frame->mac_source,
-                                        (unsigned char*)ipv4_hdr->source_ip);
+                                    Ipv4Address source_ip;
+                                    source_ip.readRaw(ipv4_hdr->source_ip);
+                                    wake_device(i, mac_source, source_ip);
 
                                     break;
                                 }
@@ -1063,7 +1036,7 @@ void SleepProxy::handle_frame(const char* frame_buffer, unsigned int bytes_read)
                     // remedy this situation by broadcasting a gratuitous ARP
                     // that should inform the sender of who they should really
                     // be sending to.
-                    restore_arp_tables(i, eth_frame->mac_source);
+                    restore_arp_tables(i, mac_source);
                 }
             }
         }
@@ -1094,9 +1067,9 @@ void SleepProxy::set_sleep_status()
             // the device that has just fallen asleep can be issued.
             if (aggressive_garp)
             {
-                log_issuing_garp(
-                    devices[i].ip_address, (const unsigned char*)own_mac);
-                send_garp(devices[i].ip_address, (const unsigned char*)own_mac);
+                // TODO: re-enable this
+                //log_issuing_garp(devices[i].ip_address, own_mac);
+                send_garp(devices[i].ip_address, own_mac);
             }
         }
 
@@ -1126,8 +1099,8 @@ void SleepProxy::issue_sleep_checks()
         devices[i].is_awake = false;
 
         // Update buffer with current device's IP and MAC
-        memcpy(arp_req_arp->tha, devices[i].mac_address, 6);
-        memcpy(arp_req_arp->tpa, devices[i].ip_address,  4);
+        devices[i].mac_address.writeRaw(arp_req_arp->tha);
+        devices[i].ip_address.writeRaw(arp_req_arp->tpa);
 
         // Issue the request
         query_socket.write((const char*)arp_request,

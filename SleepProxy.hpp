@@ -9,7 +9,9 @@
 
 #include "Device.hpp"
 #include "Endian.hpp"
+#include "Ipv4Address.hpp"
 #include "Log.hpp"
+#include "MacAddress.hpp"
 #include "PosixTimespec.hpp"
 #include "RawSocket.hpp"
 #include "arp_ipv4.h"
@@ -55,25 +57,20 @@ private:
     // frame
     void shutdown();
 
-    void obtain_own_mac_and_ip();
+    void log_issuing_wol(const MacAddress&  mac_address,
+                         const Ipv4Address& ip_address,
+                         const MacAddress&  requesting_mac,
+                         const Ipv4Address& requesting_ip);
 
-    void ip_to_string(const unsigned char* const ip,
-                      std::string&               ip_str);
+    void log_issuing_garp(const Ipv4Address& ip_address,
+                          const MacAddress&  mac_address,
+                          const MacAddress&  traffic_mac);
 
-    void log_issuing_wol(const unsigned char* const mac_address,
-                         const unsigned char* const ip_address,
-                         const unsigned char* const requesting_mac,
-                         const unsigned char* const requesting_ip);
+    void log_device_awake(const Ipv4Address& ip_address,
+                          const MacAddress&  mac_address);
 
-    void log_issuing_garp(const unsigned char* const ip_address,
-                          const unsigned char* const mac_address,
-                          const unsigned char* const traffic_mac = 0);
-
-    void log_device_awake(const unsigned char* const ip_address,
-                          const unsigned char* const mac_address);
-
-    void log_device_asleep(const unsigned char* const ip_address,
-                           const unsigned char* const mac_address);
+    void log_device_asleep(const Ipv4Address& ip_address,
+                           const MacAddress&  mac_address);
 
     void parse_default_file(const std::string& filename);
 
@@ -81,17 +78,17 @@ private:
 
     void initialize_arp_request();
 
-    void send_wol(const unsigned char* const mac_address);
+    void send_wol(const MacAddress& mac_address);
 
-    void wake_device(const unsigned int         device_index,
-                     const unsigned char* const requester_mac,
-                     const unsigned char* const requester_ip);
+    void wake_device(const unsigned int device_index,
+                     const MacAddress&  requester_mac,
+                     const Ipv4Address& requester_ip);
 
-    void send_garp(const unsigned char* ip_address,
-                   const unsigned char* mac_address);
+    void send_garp(const Ipv4Address& ip_address,
+                   const MacAddress&  mac_address);
 
-    void restore_arp_tables(const unsigned int         device_index,
-                            const unsigned char* const traffic_mac = 0);
+    void restore_arp_tables(const unsigned int device_index,
+                            const MacAddress&  traffic_mac);
 
     void handle_frame(const char* frame_buffer, unsigned int bytes_read);
 
@@ -143,10 +140,10 @@ private:
 
     // Stores the MAC of the device this proxy is using to monitor network
     // traffic
-    char own_mac[6];
+    MacAddress own_mac;
 
     // IP address assigned to interface with name interface_name
-    char own_ip[4];
+    Ipv4Address own_ip;
 
     Endian::Endianness endianness;
 

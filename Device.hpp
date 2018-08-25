@@ -3,6 +3,9 @@
 
 #include <vector>
 
+#include "Ipv4Address.hpp"
+#include "MacAddress.hpp"
+
 // Details all needed information about a device on the LAN this program may
 // proxy for
 struct Device
@@ -14,10 +17,10 @@ struct Device
   bool is_awake;
 
   // IP address
-  unsigned char ip_address[4];
+  Ipv4Address ip_address;
 
   // MAC address
-  unsigned char mac_address[6];
+  MacAddress mac_address;
 
   // List of ports this device considers important; it will be woken if traffic
   // comes in on one of them
