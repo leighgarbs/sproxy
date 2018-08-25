@@ -816,8 +816,7 @@ void SleepProxy::handle_frame(const unsigned char* frame_buffer,
 
     // Drop this frame if it came from the interface the proxy device is using
     // (if it came from ourselves).  Clearly we're not interested in these.
-    MacAddress mac_source;
-    mac_source.readRaw(eth_frame->mac_source);
+    MacAddress mac_source(eth_frame->mac_source);
     if (mac_source == own_mac)
     {
         return;
@@ -879,9 +878,8 @@ void SleepProxy::handle_frame(const unsigned char* frame_buffer,
         {
             // Check the IP address this query is for against the stored IP
             // addresses of all tracked devices
-            Ipv4Address tpa;
-            tpa.readRaw(arp_packet->tpa);
-            if (tpa == devices[i].ip_address)
+            //Ipv4Address tpa(arp_packet->tpa);
+            if (Ipv4Address(arp_packet->tpa) == devices[i].ip_address)
             {
                 // ARP query received for a sleeping device this program is
                 // proxying for.  Send an ARP response causing the sender to
@@ -940,9 +938,7 @@ void SleepProxy::handle_frame(const unsigned char* frame_buffer,
         for(unsigned int i = 0; i < devices.size(); i++)
         {
             // Compare to current device
-            Ipv4Address destination_ip;
-            destination_ip.readRaw(ipv4_hdr->destination_ip);
-            if (destination_ip == devices[i].ip_address)
+            if (Ipv4Address(ipv4_hdr->destination_ip) == devices[i].ip_address)
             {
                 // Is the device sleeping?
                 if (devices[i].is_sleeping)
@@ -958,9 +954,9 @@ void SleepProxy::handle_frame(const unsigned char* frame_buffer,
                         // for any traffic
                         if (devices[i].ports.size() == 0)
                         {
-                            Ipv4Address source_ip;
-                            source_ip.readRaw(ipv4_hdr->source_ip);
-                            wake_device(i, mac_source, source_ip);
+                            wake_device(i,
+                                        mac_source,
+                                        Ipv4Address(ipv4_hdr->source_ip));
                         }
                         else
                         {
@@ -1018,9 +1014,10 @@ void SleepProxy::handle_frame(const unsigned char* frame_buffer,
                                 // port, wake the device
                                 if (*iter == destination_port)
                                 {
-                                    Ipv4Address source_ip;
-                                    source_ip.readRaw(ipv4_hdr->source_ip);
-                                    wake_device(i, mac_source, source_ip);
+                                    wake_device(
+                                        i,
+                                        mac_source,
+                                        Ipv4Address(ipv4_hdr->source_ip));
 
                                     break;
                                 }
