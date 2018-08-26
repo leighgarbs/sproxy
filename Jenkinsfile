@@ -14,9 +14,21 @@ stages = [
    body: stageBuild,
    args: ['release', 'tests']],
 
+  [name: 'Release Tests',
+   body: stageTests,
+   args: []],
+
   [name: 'Debug Build',
    body: stageBuild,
    args: ['debug', 'tests']],
+
+  [name: 'Debug Tests',
+   body: stageTests,
+   args: []],
+
+  [name: 'Valgrind',
+   body: stageValgrind,
+   args: []],
 
   [name: 'Clang Static Analyzer',
    body: stageClangStaticAnalysis,
