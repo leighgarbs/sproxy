@@ -6,17 +6,20 @@ cmake_minimum_required(VERSION 2.6)
 
 # This project depends on the project in the toolbox subdirectory
 add_subdirectory(toolbox)
-add_subdirectory(unittests)
+add_subdirectory(unittests EXCLUDE_FROM_ALL)
 
 # Include common project setup
 include(${CMAKE_CURRENT_LIST_DIR}/common/ProjectCommon.cmake)
 
-# This project outputs this executable
-add_executable(${PROJECT_NAME} main.cpp SleepProxy.cpp)
-
-# We need to link toolbox
+# Base code is built into a library because it's easier this way ... main.cpp
+# links to it
+add_library(${PROJECT_NAME} SleepProxy.cpp)
 target_link_libraries(${PROJECT_NAME} toolbox)
-
-# Include toolbox headers
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE
   . toolbox toolbox/networking)
+
+# Add the target that builds the sproxy executable
+add_executable(${PROJECT_NAME}-main main.cpp)
+set_target_properties(${PROJECT_NAME}-main
+  PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
+target_link_libraries(${PROJECT_NAME}-main ${PROJECT_NAME})
