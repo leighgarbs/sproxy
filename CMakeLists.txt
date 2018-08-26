@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 2.6)
 
 # This project depends on the project in the toolbox subdirectory
 add_subdirectory(toolbox)
-add_subdirectory(unittests EXCLUDE_FROM_ALL)
+add_subdirectory(tests EXCLUDE_FROM_ALL)
 
 # Include common project setup
 include(${CMAKE_CURRENT_LIST_DIR}/common/ProjectCommon.cmake)

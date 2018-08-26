@@ -12,11 +12,11 @@ stages = [
 
   [name: 'Release Build',
    body: stageBuild,
-   args: ['release', '']],
+   args: ['release', 'tests']],
 
   [name: 'Debug Build',
    body: stageBuild,
-   args: ['debug', '']],
+   args: ['debug', 'tests']],
 
   [name: 'Clang Static Analyzer',
    body: stageClangStaticAnalysis,
