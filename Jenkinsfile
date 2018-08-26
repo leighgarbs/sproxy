@@ -12,7 +12,7 @@ stages = [
 
   [name: 'Release Build',
    body: stageBuild,
-   args: ['release', 'tests']],
+   args: ['release', 'tests-sproxy']],
 
   [name: 'Release Tests',
    body: stageTests,
@@ -20,7 +20,7 @@ stages = [
 
   [name: 'Debug Build',
    body: stageBuild,
-   args: ['debug', 'tests']],
+   args: ['debug', 'tests-sproxy']],
 
   [name: 'Debug Tests',
    body: stageTests,
