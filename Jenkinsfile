@@ -34,13 +34,9 @@ stages = [
    body: stageClangStaticAnalysis,
    args: []],
 
-  [name: 'Detect GCC Warnings',
+  [name: 'Detect Warnings',
    body: stageDetectWarnings,
-   args: ["GNU Make + GNU C Compiler (gcc)"]],
-
-  [name: 'Detect Clang Warnings',
-   body: stageDetectWarnings,
-   args: ["Clang (LLVM based)"]]
+   args: []],
 
 ]
 
