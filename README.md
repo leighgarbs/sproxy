@@ -1,5 +1,5 @@
-**[tools-cpp](https://github.com/leighgarbs/tools-cpp)** -
-  Generalized cross-project C++ tools
+**[sproxy](https://github.com/leighgarbs/sproxy.git)** -
+  Monolithic LAN sleep proxy
 ==========================================================
 
 For personal use.  This is an implementation of [this concept](https://en.wikipedia.org/wiki/Bonjour_Sleep_Proxy).
