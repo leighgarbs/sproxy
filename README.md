@@ -11,6 +11,8 @@ For personal use.  This is an implementation of [this concept](https://en.wikipe
 * Configurable
 * IPv4 support
 * Ethernet v2 support
+* Runnable as a daemon
+* Logs useful information to log file during runtime
 
 ## Goals ##
 * Transition to object-oriented C++ (see branch sproxy-class)
