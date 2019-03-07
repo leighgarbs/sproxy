@@ -9,7 +9,7 @@ For personal use.  This is an implementation of [this concept](https://en.wikipe
 * Uses [magic packets](https://en.wikipedia.org/wiki/Wake-on-LAN#Magic_packet) to wake needed sleeping or hibernating devices which support [Wake-on-LAN](https://en.wikipedia.org/wiki/Wake-on-LAN)
 * Periodically polls all configured network devices for sleep status using ARP requests
 * Configurable
-* IPv4 support (no IPv6)
+* IPv4 support
 * Ethernet v2 support
 
 ## Goals ##
