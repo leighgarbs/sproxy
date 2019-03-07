@@ -561,6 +561,18 @@ void parse_config_file(const std::string& filename)
     // Now that we know we have a new device to monitor, push a new Device onto
     // the list of devices to track it
     Device new_device;
+
+    // Initially mark the device as awake; if it really isn't awake, this
+    // program will figure it out shortly
+    new_device.is_sleeping = false;
+    new_device.is_awake    = true;
+
+    // Last WOL timestamp init
+    new_device.last_wol_timestamp = 0;
+
+    // Last gratuitous ARP timestamp init
+    new_device.last_garp_timestamp = 0;
+
     devices.push_back(new_device);
 
     // Scan the device's MAC address into temporary storage
@@ -636,17 +648,6 @@ void parse_config_file(const std::string& filename)
       // Add the port to the device's list
       devices.back().ports.push_back(port);
     }
-
-    // Initially mark the device as awake; if it really isn't awake, this
-    // program will figure it out shortly
-    devices.back().is_sleeping = false;
-    devices.back().is_awake    = true;
-
-    // Last WOL timestamp init
-    devices.back().last_wol_timestamp = 0;
-
-    // Last gratuitous ARP timestamp init
-    devices.back().last_garp_timestamp = 0;
   }
 }
 
