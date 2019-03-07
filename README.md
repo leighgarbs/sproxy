@@ -12,7 +12,7 @@ For personal use.  This is an implementation of [this concept](https://en.wikipe
 * Ethernet v2 support
 
 ## Goals ##
-* Transition to object-oriented C++
+* Transition to object-oriented C++ (see branch sproxy-class)
 * Add tests
 
 ## Style ##
