@@ -2,7 +2,7 @@
   Monolithic LAN sleep proxy
 ==========================================================
 
-For personal use.  This is an implementation of [this concept](https://en.wikipedia.org/wiki/Bonjour_Sleep_Proxy), except it doesn't use multicast DNS, only ARP.
+For personal use.  This is an implementation of [this concept](https://en.wikipedia.org/wiki/Bonjour_Sleep_Proxy) that only uses ARP (no multicast DNS).
 
 ## Features ##
 * Uses [ARP spoofing](https://en.wikipedia.org/wiki/ARP_spoofing) to receive traffic intended for sleeping or hibernating devices on the LAN
