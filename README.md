@@ -15,7 +15,7 @@ For personal use.  This is an implementation of [this concept](https://en.wikipe
 * Logs useful information to log file during runtime
 
 ## Goals ##
-* Transition to object-oriented C++ (see branch sproxy-class)
+* Transition to object-oriented C++ (see branch "refactor")
 * Add tests
 * IPv6 support
 
