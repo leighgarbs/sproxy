@@ -1,11 +1,8 @@
 ## Description
-What are you doing?
+What needs to be done?
 
 ## Rationale
-Why are you doing it?
-
-## Testing
-How has this been tested?  How will this be tested?
+Why does it need to be done?
 
 ## Links
 | **Related To** | **Blocks** | **Is Blocked By** | **Fixes** | **Is Fixed By** |
