@@ -18,8 +18,7 @@
 #include "ethernet_ii_header.h"
 #include "misc.hpp"
 
-// This doesn't compile anywhere but Linux but here are the Linux-specific
-// headers anyway
+// This doesn't compile anywhere but Linux but here are the Linux-specific headers anyway
 #if defined LINUX
 #include <linux/if_ether.h>
 #endif
@@ -28,9 +27,6 @@ class PosixSleepProxyImpl : public SleepProxyImpl
 {
 public:
 
-    // Parses configuration files and command-line arguments, applies
-    // corresponding state, prepares raw socket for use; tp is the period
-    // between step() executions
     PosixSleepProxyImpl(
         int                             argc,
         char**                          argv,
@@ -40,7 +36,6 @@ public:
 
     virtual ~PosixSleepProxyImpl();
 
-    // Body of the main loop, executed periodically and indefinitely
     virtual void step();
 
 protected:
@@ -50,8 +45,8 @@ protected:
 
 private:
 
-    // This function is called on every hunk of data read off of sniff_socket.
-    // Most significant actions occur in here.
+    // This function is called on every hunk of data read off of sniff_socket.  Most
+    // significant actions occur in here.
     void handleFrame(const unsigned char* frame_buffer,
                      unsigned int         bytes_read);
 
@@ -64,8 +59,7 @@ private:
     // Closes the log file; used before log rotation and on shutdown
     void closeLog();
 
-    // Frees resources and triggers program shutdown at the end of the current
-    // frame
+    // Frees resources and triggers program shutdown at the end of the current frame
     void shutdown();
 
     void logIssuingWol(const MacAddress&  mac_address,
@@ -77,14 +71,10 @@ private:
                                  const MacAddress&  mac_address,
                                  const MacAddress&  traffic_mac);
 
-    void logDeviceAwake(const Ipv4Address& ip_address,
-                        const MacAddress&  mac_address);
-
-    void logDeviceAsleep(const Ipv4Address& ip_address,
-                         const MacAddress&  mac_address);
+    void logDeviceAwake(const Ipv4Address& ip_address, const MacAddress&  mac_address);
+    void logDeviceAsleep(const Ipv4Address& ip_address, const MacAddress&  mac_address);
 
     bool processDefaultFile(const std::string& filename);
-
     bool processConfigFile(const std::string& filename);
 
     void initializeArpRequest();
@@ -95,11 +85,9 @@ private:
                     const MacAddress&  requester_mac,
                     const Ipv4Address& requester_ip);
 
-    void sendGratuitousArp(const Ipv4Address& ip_address,
-                           const MacAddress&  mac_address);
+    void sendGratuitousArp(const Ipv4Address& ip_address, const MacAddress&  mac_address);
 
-    void restoreArpTables(const unsigned int device_index,
-                          const MacAddress&  traffic_mac);
+    void restoreArpTables(const unsigned int device_index, const MacAddress&  traffic_mac);
 
     void setSleepStatus();
 
@@ -141,12 +129,10 @@ private:
     // Stores known devices to monitor
     std::vector<Device> devices;
 
-    // Stores a template ARP request used when checking if monitored hosts are
-    // asleep
+    // Stores a template ARP request used when checking if monitored hosts are asleep
     unsigned char arp_request[sizeof(ethernet_ii_header) + sizeof(arp_ipv4)];
 
-    // Stores the MAC of the device this proxy is using to monitor network
-    // traffic
+    // Stores the MAC of the device this proxy is using to monitor network traffic
     MacAddress own_mac;
 
     // IP address assigned to interface with name interface_name

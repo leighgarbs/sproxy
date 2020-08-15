@@ -44,8 +44,7 @@ private:
 
     // This function is called on every hunk of data read off of sniff_socket.  Most
     // significant actions occur in here.
-    void handleFrame(const std::uint8_t* frame_buffer,
-                     unsigned int        bytes_read);
+    void handleFrame(const std::uint8_t* frame_buffer, unsigned int bytes_read);
 
     SleepProxyImpl* sleep_proxy_impl;
 

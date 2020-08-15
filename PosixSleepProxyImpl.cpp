@@ -1,6 +1,5 @@
-// This program acts as a sleep proxy for the attached LAN.  It attempts to
-// recognize sleeping LAN devices and wake them if they have important traffic
-// inbound.
+// This program acts as a sleep proxy for the attached LAN.  It attempts to recognize sleeping
+// LAN devices and wake them if they have important traffic inbound.
 
 #include <arpa/inet.h>
 #include <csignal>
@@ -37,12 +36,11 @@
 
 const unsigned int PosixSleepProxyImpl::PARSING_BUFFER_LENGTH = 1000;
 
-//=============================================================================
-PosixSleepProxyImpl::PosixSleepProxyImpl(
-    int                             argc,
-    char**                          argv,
-    const std::chrono::nanoseconds& period,
-    const std::chrono::nanoseconds& tolerance) :
+//=============================================================================================
+PosixSleepProxyImpl::PosixSleepProxyImpl(int                             argc,
+                                         char**                          argv,
+                                         const std::chrono::nanoseconds& period,
+                                         const std::chrono::nanoseconds& tolerance) :
     SleepProxyImpl(argc, argv, period, tolerance),
     default_filename("/etc/sproxy/config"),
     config_filename("/etc/sproxy/devices"),
@@ -109,21 +107,21 @@ PosixSleepProxyImpl::PosixSleepProxyImpl(
     log.write("Service starting");
 }
 
-//==============================================================================
+//=============================================================================================
 PosixSleepProxyImpl::~PosixSleepProxyImpl()
 {
     shutdown();
 }
 
-//==============================================================================
+//=============================================================================================
 // Body of the main loop, executed periodically and indefinitely
-//==============================================================================
+//=============================================================================================
 void PosixSleepProxyImpl::step()
 {
     // TODO: Grab the current time
 
-    // If it's time to check all monitored devices for sleep, then check all
-    // monitored devices for sleep. Step 1
+    // If it's time to check all monitored devices for sleep, then check all monitored devices
+    // for sleep. Step 1
 
     // How much time has passed since the last sleep check?
     PosixTimespec time_since_lsc = frame_start - last_sleep_check;
@@ -167,15 +165,15 @@ void PosixSleepProxyImpl::step()
     }
     while (bytes_read > 0);
 
-    // It's possible for this to run shutdown(), which itself releases resources
-    // needed by this class.  Let's handle signals here, so if we do indeed
-    // shutdown we do so after this frame has used all the needed resources.
+    // It's possible for this to run shutdown(), which itself releases resources needed by this
+    // class.  Let's handle signals here, so if we do indeed shutdown we do so after this frame
+    // has used all the needed resources.
     processDeliveredSignals();
 }
 
-//==============================================================================
+//=============================================================================================
 // Delivered signals handled here
-//==============================================================================
+//=============================================================================================
 void PosixSleepProxyImpl::processDeliveredSignals()
 {
     SignalManager* signal_manager = getSignalManager();
@@ -199,49 +197,47 @@ void PosixSleepProxyImpl::processDeliveredSignals()
     }
 }
 
-//==============================================================================
+//=============================================================================================
 // Called to parse and respond to sniffed frames
-//==============================================================================
+//=============================================================================================
 void PosixSleepProxyImpl::handleFrame(const unsigned char* frame_buffer,
                                       unsigned int         bytes_read)
 {
-    // There are currently two types of interesting traffic; ARP queries and
-    // IPv4 packets.  Later we will see if this frame contains either of those
-    // things.  Assume Ethernet II frames.
+    // There are currently two types of interesting traffic; ARP queries and IPv4 packets.
+    // Later we will see if this frame contains either of those things.  Assume Ethernet II
+    // frames.
 
     // Interpret this frame as an Ethernet II frame
     ethernet_ii_header* eth_frame  = (ethernet_ii_header*)frame_buffer;
 
-    // Drop this frame if it came from the interface the proxy device is using
-    // (if it came from ourselves).  Clearly we're not interested in these.
+    // Drop this frame if it came from the interface the proxy device is using (if it came from
+    // ourselves).  Clearly we're not interested in these.
     MacAddress mac_source(eth_frame->mac_source);
     if (mac_source == own_mac)
     {
         return;
     }
 
-    // First, check the source of the frame.  If it came from from a device
-    // thought to be sleeping, change it's status to non-sleeping.
+    // First, check the source of the frame.  If it came from from a device thought to be
+    // sleeping, change it's status to non-sleeping.
     for (unsigned int i = 0; i < devices.size(); i++)
     {
         if (devices[i].mac_address == mac_source)
         {
-            // If this device is marked as sleeping, update the network's ARP
-            // tables so traffic gets send directly to it now, rather than to
-            // the proxy; the device is awake so it should handle its own
-            // traffic
+            // If this device is marked as sleeping, update the network's ARP tables so traffic
+            // gets send directly to it now, rather than to the proxy; the device is awake so
+            // it should handle its own traffic
             if (devices[i].is_sleeping)
             {
-                // Device has just been detected to be awake, log this status
-                // change
+                // Device has just been detected to be awake, log this status change
                 logDeviceAwake(devices[i].ip_address, devices[i].mac_address);
 
                 // TODO: re-enable this
                 //restoreArpTables(i);
             }
 
-            // This device can't be sleeping, because we just got a frame from
-            // it.  Change status to reflect this.
+            // This device can't be sleeping, because we just got a frame from it.  Change
+            // status to reflect this.
             devices[i].is_sleeping = false;
 
             // Mark device as awake for the sleep checker thread
@@ -249,10 +245,9 @@ void PosixSleepProxyImpl::handleFrame(const unsigned char* frame_buffer,
         }
     }
 
-    // Initially interpret frame's contents as an IPv4 ARP packet; later
-    // different re-interpretations may be applied as necessary
-    arp_ipv4* arp_packet = (arp_ipv4*)(frame_buffer +
-                                       sizeof(ethernet_ii_header));
+    // Initially interpret frame's contents as an IPv4 ARP packet; later different
+    // re-interpretations may be applied as necessary
+    arp_ipv4* arp_packet = (arp_ipv4*)(frame_buffer + sizeof(ethernet_ii_header));
 
     // Ethertype for IPv4 packets
     char ipv4_type[2];
@@ -274,31 +269,24 @@ void PosixSleepProxyImpl::handleFrame(const unsigned char* frame_buffer,
         // Is this query for a sleeping device this program is proxying for?
         for(unsigned int i = 0; i < devices.size(); i++)
         {
-            // Check the IP address this query is for against the stored IP
-            // addresses of all tracked devices
-            //Ipv4Address tpa(arp_packet->tpa);
+            // Check the IP address this query is for against the stored IP addresses of all
+            // tracked devices Ipv4Address tpa(arp_packet->tpa);
             if (Ipv4Address(arp_packet->tpa) == devices[i].ip_address)
             {
-                // ARP query received for a sleeping device this program is
-                // proxying for.  Send an ARP response causing the sender to
-                // direct traffic here
+                // ARP query received for a sleeping device this program is proxying for.  Send
+                // an ARP response causing the sender to direct traffic here
 
                 // Set up the buffer and establish some easy references into it
-                unsigned int buf_size =
-                    sizeof(ethernet_ii_header) + sizeof(arp_ipv4);
+                unsigned int buf_size = sizeof(ethernet_ii_header) + sizeof(arp_ipv4);
                 unsigned char response_buffer[buf_size];
 
-                ethernet_ii_header* response_eth_hdr =
-                    (ethernet_ii_header*)response_buffer;
+                ethernet_ii_header* response_eth_hdr = (ethernet_ii_header*)response_buffer;
 
-                arp_ipv4* response_arp_hdr =
-                    (arp_ipv4*)((char*)response_buffer +
-                                sizeof(ethernet_ii_header));
+                arp_ipv4* response_arp_hdr = (arp_ipv4*)((char*)response_buffer +
+                                                         sizeof(ethernet_ii_header));
 
                 // Fill in Ethernet header
-                memcpy(response_eth_hdr->mac_destination,
-                       eth_frame->mac_source,
-                       6);
+                memcpy(response_eth_hdr->mac_destination, eth_frame->mac_source, 6);
 
                 own_mac.DataField::writeRaw(response_eth_hdr->mac_source);
                 memcpy(response_eth_hdr->ethertype, arp_type, 2);
@@ -316,9 +304,8 @@ void PosixSleepProxyImpl::handleFrame(const unsigned char* frame_buffer,
                 memcpy(response_arp_hdr->tha, arp_packet->sha, 6);
                 memcpy(response_arp_hdr->tpa, arp_packet->spa, 4);
 
-                // Issue the response; this should cause the computer that
-                // queried for the sleeping device to believe this computer IS
-                // the sleeping device
+                // Issue the response; this should cause the computer that queried for the
+                // sleeping device to believe this computer IS the sleeping device
                 RawSocket raw_socket;
                 raw_socket.setOutputInterface(interface_name);
                 raw_socket.write(response_buffer, buf_size);
@@ -329,8 +316,7 @@ void PosixSleepProxyImpl::handleFrame(const unsigned char* frame_buffer,
     else if (memcmp(eth_frame->ethertype, (void*)ipv4_type, 2) == 0)
     {
         // Consider this packet as an IPv4 packet
-        ipv4_header* ipv4_hdr =
-            (ipv4_header*)(frame_buffer + sizeof(ethernet_ii_header));
+        ipv4_header* ipv4_hdr = (ipv4_header*)(frame_buffer + sizeof(ethernet_ii_header));
 
         // Is this packet for a device this proxy is monitoring?
         for(unsigned int i = 0; i < devices.size(); i++)
@@ -341,31 +327,26 @@ void PosixSleepProxyImpl::handleFrame(const unsigned char* frame_buffer,
                 // Is the device sleeping?
                 if (devices[i].is_sleeping)
                 {
-                    // We've intercepted traffic for a sleeping device.  Now it
-                    // needs to be determined if this traffic is important.
+                    // We've intercepted traffic for a sleeping device.  Now it needs to be
+                    // determined if this traffic is important.
 
                     // Consider only TCP and UDP
-                    if (*ipv4_hdr->protocol == 0x06 ||
-                        *ipv4_hdr->protocol == 0x11)
+                    if (*ipv4_hdr->protocol == 0x06 || *ipv4_hdr->protocol == 0x11)
                     {
-                        // If this device has no important ports listed, wake it
-                        // for any traffic
+                        // If this device has no important ports listed, wake it for any
+                        // traffic
                         if (devices[i].ports.size() == 0)
                         {
-                            wakeDevice(i,
-                                       mac_source,
-                                       Ipv4Address(ipv4_hdr->source_ip));
+                            wakeDevice(i, mac_source, Ipv4Address(ipv4_hdr->source_ip));
                         }
                         else
                         {
-                            // Figure out how long the header in this IPv4
-                            // packet is; we have to do this to know where the
-                            // payload starts, to know where to pick the
-                            // destination port from
+                            // Figure out how long the header in this IPv4 packet is; we have
+                            // to do this to know where the payload starts, to know where to
+                            // pick the destination port from
 
-                            // The header length in the packet indicates the
-                            // number of 32-bit words, so the multiply by 4 is
-                            // necessary to convert to bytes
+                            // The header length in the packet indicates the number of 32-bit
+                            // words, so the multiply by 4 is necessary to convert to bytes
                             unsigned short ipv4_headerlen =
                                 (*(ipv4_hdr->version_headerlen) & 0x0f) * 4;
 
@@ -379,25 +360,17 @@ void PosixSleepProxyImpl::handleFrame(const unsigned char* frame_buffer,
                             unsigned short destination_port =
                                 *(unsigned short*)(ipv4_payload + 2);
 
-                            // Byte-swap the retrieved port if the endian-ness
-                            // of this host doesn't match network byte order
+                            // Byte-swap the retrieved port if the endian-ness of this host
+                            // doesn't match network byte order
                             if (byte_order == misc::ENDIAN_LITTLE)
                             {
                                 // Copy the port's two bytes
-                                unsigned char byte1 =
-                                    *(unsigned char*)&destination_port;
-                                unsigned char byte2 =
-                                    *((unsigned char*)&destination_port + 1);
+                                unsigned char byte1 = *(unsigned char*)&destination_port;
+                                unsigned char byte2 = *((unsigned char*)&destination_port + 1);
 
                                 // Copy the two bytes back in, in reverse order
-
-                                memcpy((unsigned char*)&destination_port,
-                                       &byte2,
-                                       1);
-
-                                memcpy((unsigned char*)&destination_port + 1,
-                                       &byte1,
-                                       1);
+                                memcpy((unsigned char*)&destination_port, &byte2, 1);
+                                memcpy((unsigned char*)&destination_port + 1, &byte1, 1);
                             }
 
                             // Loop over all this device's listed important
@@ -413,9 +386,7 @@ void PosixSleepProxyImpl::handleFrame(const unsigned char* frame_buffer,
                                 if (*iter == destination_port)
                                 {
                                     wakeDevice(
-                                        i,
-                                        mac_source,
-                                        Ipv4Address(ipv4_hdr->source_ip));
+                                        i, mac_source, Ipv4Address(ipv4_hdr->source_ip));
 
                                     break;
                                 }
@@ -425,13 +396,11 @@ void PosixSleepProxyImpl::handleFrame(const unsigned char* frame_buffer,
                 }
                 else
                 {
-                    // We've intercepted traffic for a device that is awake.
-                    // This means the device that sent this traffic still
-                    // believes it should send data to the proxy, when it should
-                    // be sending data to its intended destination.  Attempt to
-                    // remedy this situation by broadcasting a gratuitous ARP
-                    // that should inform the sender of who they should really
-                    // be sending to.
+                    // We've intercepted traffic for a device that is awake.  This means the
+                    // device that sent this traffic still believes it should send data to the
+                    // proxy, when it should be sending data to its intended destination.
+                    // Attempt to remedy this situation by broadcasting a gratuitous ARP that
+                    // should inform the sender of who they should really be sending to.
                     restoreArpTables(i, mac_source);
                 }
             }
@@ -439,22 +408,20 @@ void PosixSleepProxyImpl::handleFrame(const unsigned char* frame_buffer,
     }
 }
 
-//==============================================================================
+//=============================================================================================
 // Interprets program arguments and applies corresponding state
-//==============================================================================
+//=============================================================================================
 bool PosixSleepProxyImpl::processArguments()
 {
     std::vector<std::string> arguments;
     getArguments(arguments);
 
-    std::vector<std::string>::const_iterator current_argument =
-        arguments.begin();
+    std::vector<std::string>::const_iterator current_argument = arguments.begin();
 
     while(current_argument != arguments.end())
     {
         // Convenience reference to the next argument
-        std::vector<std::string>::const_iterator next_argument =
-            current_argument + 1;
+        std::vector<std::string>::const_iterator next_argument = current_argument + 1;
 
         // Argument -D indicates this process should daemonize itself
         if (*current_argument == "-D")
@@ -465,8 +432,8 @@ bool PosixSleepProxyImpl::processArguments()
         {
             // Process argument pairs here
 
-            // Assume we're going to process a valid argument here.  If we don't
-            // this will be set false
+            // Assume we're going to process a valid argument here.  If we don't this will be
+            // set false
             bool twoarg_processed = true;
 
             // Argument -c specifies the config file filename
@@ -500,9 +467,8 @@ bool PosixSleepProxyImpl::processArguments()
                 twoarg_processed = false;
             }
 
-            // If we processed a switch with an argument then we should bump the
-            // current argument here to prevent the argument from being
-            // processed again
+            // If we processed a switch with an argument then we should bump the current
+            // argument here to prevent the argument from being processed again
             if (twoarg_processed)
             {
                 ++current_argument;
@@ -513,14 +479,13 @@ bool PosixSleepProxyImpl::processArguments()
         ++current_argument;
     }
 
-    // If execution reaches here there was an acceptable set of arguments
-    // provided
+    // If execution reaches here there was an acceptable set of arguments provided
     return true;
 }
 
-//==============================================================================
+//=============================================================================================
 // Opens the log file; used after log rotation and during startup
-//==============================================================================
+//=============================================================================================
 void PosixSleepProxyImpl::openLog()
 {
     log_stream.open(log_filename.c_str(), std::ofstream::app);
@@ -532,18 +497,18 @@ void PosixSleepProxyImpl::openLog()
     log.write("Log file open");
 }
 
-//==============================================================================
+//=============================================================================================
 // Closes the log file; used before log rotation and on shutdown
-//==============================================================================
+//=============================================================================================
 void PosixSleepProxyImpl::closeLog()
 {
     log.write("Closing log file");
     log_stream.close();
 }
 
-//==============================================================================
+//=============================================================================================
 // Frees resources and triggers program shutdown at the end of the current frame
-//==============================================================================
+//=============================================================================================
 void PosixSleepProxyImpl::shutdown()
 {
     // Log that the service is stopping
@@ -558,36 +523,34 @@ void PosixSleepProxyImpl::shutdown()
     setTerminate(true);
 }
 
-//==============================================================================
+//=============================================================================================
 // Issuing a WOL
-//==============================================================================
+//=============================================================================================
 void PosixSleepProxyImpl::logIssuingWol(const MacAddress&  mac_address,
-                               const Ipv4Address& ip_address,
-                               const MacAddress&  requesting_mac,
-                               const Ipv4Address& requesting_ip)
+                                        const Ipv4Address& ip_address,
+                                        const MacAddress&  requesting_mac,
+                                        const Ipv4Address& requesting_ip)
 {
     std::ostringstream outstream;
-    outstream << "Issuing WOL for " << mac_address << " (" << ip_address
-              << ") on behalf of " << requesting_mac << " (" << requesting_ip
-              << ")";
+    outstream << "Issuing WOL for " << mac_address << " (" << ip_address << ") on behalf of "
+              << requesting_mac << " (" << requesting_ip << ")";
 
     log.write(outstream.str());
 }
 
-//==============================================================================
+//=============================================================================================
 // Issuing a gratuitous ARP
-//==============================================================================
+//=============================================================================================
 void PosixSleepProxyImpl::logIssuingGratuitousArp(const Ipv4Address& ip_address,
-                                         const MacAddress&  mac_address,
-                                         const MacAddress&  traffic_mac)
+                                                  const MacAddress&  mac_address,
+                                                  const MacAddress&  traffic_mac)
 {
     std::ostringstream outstream;
-    outstream << "Issuing gratuitous ARP associating " << ip_address
-              << " with ";
+    outstream << "Issuing gratuitous ARP associating " << ip_address << " with ";
 
-    // See if the MAC address we're dealing with is the proxy's MAC address, and
-    // if it is, we'll print 'self' in the log in place of the proxy's MAC,
-    // because this is easier to understand
+    // See if the MAC address we're dealing with is the proxy's MAC address, and if it is,
+    // we'll print 'self' in the log in place of the proxy's MAC, because this is easier to
+    // understand
     if (own_mac == mac_address)
     {
         outstream << "self";
@@ -614,35 +577,33 @@ void PosixSleepProxyImpl::logIssuingGratuitousArp(const Ipv4Address& ip_address,
     log.write(outstream.str());
 }
 
-//==============================================================================
+//=============================================================================================
 // Device has awoken
-//==============================================================================
+//=============================================================================================
 void PosixSleepProxyImpl::logDeviceAwake(const Ipv4Address& ip_address,
-                                const MacAddress&  mac_address)
+                                         const MacAddress&  mac_address)
 {
     std::ostringstream message_stream;
-    message_stream << "Device " << mac_address << " (" << ip_address
-                   << ") is awake";
+    message_stream << "Device " << mac_address << " (" << ip_address << ") is awake";
 
     log.write(message_stream.str());
 }
 
-//==============================================================================
+//=============================================================================================
 // Device has fallen asleep
-//==============================================================================
+//=============================================================================================
 void PosixSleepProxyImpl::logDeviceAsleep(const Ipv4Address& ip_address,
-                                 const MacAddress&  mac_address)
+                                          const MacAddress&  mac_address)
 {
     std::ostringstream message_stream;
-    message_stream << "Device " << mac_address << " (" << ip_address
-                   << ") is asleep";
+    message_stream << "Device " << mac_address << " (" << ip_address << ") is asleep";
 
     log.write(message_stream.str());
 }
 
-//==============================================================================
+//=============================================================================================
 // Parses sproxy defaults file
-//==============================================================================
+//=============================================================================================
 bool PosixSleepProxyImpl::processDefaultFile(const std::string& filename)
 {
     // Open the defaults file
@@ -674,9 +635,8 @@ bool PosixSleepProxyImpl::processDefaultFile(const std::string& filename)
         // Search through the line for a '='
         size_t equal_sign = default_line_string.find('=');
 
-        // If there isn't an equal sign, or the equal sign is at the beginning
-        // or end of the buffer, just go to the next line because this line is
-        // bad
+        // If there isn't an equal sign, or the equal sign is at the beginning or end of the
+        // buffer, just go to the next line because this line is bad
         if (equal_sign == std::string::npos ||
             equal_sign == 0 ||
             equal_sign == default_line_string.length())
@@ -686,8 +646,7 @@ bool PosixSleepProxyImpl::processDefaultFile(const std::string& filename)
 
         // Pull out the strings on the left and right of the equal sign
         std::string left_side  = default_line_string.substr(0, equal_sign);
-        std::string right_side = default_line_string.substr(equal_sign + 1,
-                                                            std::string::npos);
+        std::string right_side = default_line_string.substr(equal_sign + 1, std::string::npos);
 
         // Now set the appropriate variable based on what was just parsed
         if (left_side == "ETH_INTERFACE")
@@ -712,8 +671,7 @@ bool PosixSleepProxyImpl::processDefaultFile(const std::string& filename)
         }
         else if (left_side == "SLEEP_CHECK_PERIOD")
         {
-            // Convert the right side to a number, that's what it's supposed to
-            // be
+            // Convert the right side to a number, that's what it's supposed to be
             convert_to_number.clear();
             convert_to_number.str(right_side);
             convert_to_number >> sleep_check_period;
@@ -733,9 +691,9 @@ bool PosixSleepProxyImpl::processDefaultFile(const std::string& filename)
     return true;
 }
 
-//==============================================================================
+//=============================================================================================
 // Parses sproxy config file
-//==============================================================================
+//=============================================================================================
 bool PosixSleepProxyImpl::processConfigFile(const std::string& filename)
 {
     // Open the file containing the devices to proxy for
@@ -775,15 +733,13 @@ bool PosixSleepProxyImpl::processConfigFile(const std::string& filename)
         // Read the MAC address
         config_line >> token;
 
-        // If the line begins with a #, it's a comment line; move on to the next
-        // line
+        // If the line begins with a #, it's a comment line; move on to the next line
         if (token[0] == '#')
         {
             continue;
         }
 
-        // We might have a new device to monitor so start trying to collect
-        // information on it
+        // We might have a new device to monitor so start trying to collect information on it
         Device new_device;
 
         // Grab the device's MAC address
@@ -814,8 +770,7 @@ bool PosixSleepProxyImpl::processConfigFile(const std::string& filename)
             if (convert_stream.fail())
             {
                 // If something else went wrong, inform the user and quit
-                std::cerr << "Unable to parse port on line " << line_number
-                          << "\n";
+                std::cerr << "Unable to parse port on line " << line_number << "\n";
                 shutdown();
             }
 
@@ -823,8 +778,8 @@ bool PosixSleepProxyImpl::processConfigFile(const std::string& filename)
             new_device.ports.push_back(port);
         }
 
-        // Initially mark the device as awake; if it really isn't awake, this
-        // program will figure it out shortly
+        // Initially mark the device as awake; if it really isn't awake, this program will
+        // figure it out shortly
         new_device.is_sleeping = false;
         new_device.is_awake    = true;
 
@@ -834,14 +789,13 @@ bool PosixSleepProxyImpl::processConfigFile(const std::string& filename)
     return true;
 }
 
-//==============================================================================
+//=============================================================================================
 // Initializes the arp_request global variable with a template ARP request
-//==============================================================================
+//=============================================================================================
 void PosixSleepProxyImpl::initializeArpRequest()
 {
     ethernet_ii_header* arp_req_eth_hdr = (ethernet_ii_header*)arp_request;
-    arp_ipv4* arp_req_arp =
-        (arp_ipv4*)(arp_request + sizeof(ethernet_ii_header));
+    arp_ipv4* arp_req_arp = (arp_ipv4*)(arp_request + sizeof(ethernet_ii_header));
 
     // Set destination MAC
     memset(arp_req_eth_hdr->mac_destination, 0xff, 6);
@@ -872,9 +826,9 @@ void PosixSleepProxyImpl::initializeArpRequest()
     own_ip.DataField::writeRaw(arp_req_arp->spa);
 }
 
-//==============================================================================
+//=============================================================================================
 // Sends a wake-on-LAN frame for the specified MAC address
-//==============================================================================
+//=============================================================================================
 void PosixSleepProxyImpl::sendWol(const MacAddress& mac_address)
 {
     // Create the buffer in which a WOL frame will be constructed
@@ -906,16 +860,15 @@ void PosixSleepProxyImpl::sendWol(const MacAddress& mac_address)
     raw_socket.write(const_cast<const unsigned char*>(wol_buffer), buf_size);
 }
 
-//==============================================================================
-// Calls sendWol to wake a device, if enough time has passed since the last WOL
-// was sent; ASSUMES THE DEVICE ASSOCIATED WITH THE GIVEN DEVICE INDEX IS LOCKED
-//==============================================================================
+//=============================================================================================
+// Calls sendWol to wake a device, if enough time has passed since the last WOL was sent;
+// ASSUMES THE DEVICE ASSOCIATED WITH THE GIVEN DEVICE INDEX IS LOCKED
+//=============================================================================================
 void PosixSleepProxyImpl::wakeDevice(const unsigned int device_index,
-                            const MacAddress&  requester_mac,
-                            const Ipv4Address& requester_ip)
+                                     const MacAddress&  requester_mac,
+                                     const Ipv4Address& requester_ip)
 {
-    std::chrono::steady_clock::time_point current_time =
-        std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point current_time = std::chrono::steady_clock::now();
 
     // Issue another WOL if it's been a second or more since the last WOL
     if (current_time - devices[device_index].last_wol_timestamp >=
@@ -935,11 +888,11 @@ void PosixSleepProxyImpl::wakeDevice(const unsigned int device_index,
     }
 }
 
-//==============================================================================
+//=============================================================================================
 // Sends a gratuitous ARP for the specified IP address/MAC address combo
-//==============================================================================
+//=============================================================================================
 void PosixSleepProxyImpl::sendGratuitousArp(const Ipv4Address& ip_address,
-                                   const MacAddress&  mac_address)
+                                            const MacAddress&  mac_address)
 {
     // Allocate a buffer for the ARP
     unsigned int buf_size = sizeof(ethernet_ii_header) + sizeof(arp_ipv4);
@@ -980,21 +933,19 @@ void PosixSleepProxyImpl::sendGratuitousArp(const Ipv4Address& ip_address,
     raw_socket.write(garp_buffer, buf_size);
 }
 
-//==============================================================================
-// Sends a gratuitous ARP associating a MAC address with an IP address, if
-// enough time has passed since the last one; ASSUMES THE DEVICE ASSOCIATED WITH
-// THE GIVEN MAC ADDRESS IS LOCKED
-//==============================================================================
+//=============================================================================================
+// Sends a gratuitous ARP associating a MAC address with an IP address, if enough time has
+// passed since the last one; ASSUMES THE DEVICE ASSOCIATED WITH THE GIVEN MAC ADDRESS IS
+// LOCKED
+//=============================================================================================
 void PosixSleepProxyImpl::restoreArpTables(const unsigned int device_index,
-                                  const MacAddress&  traffic_mac)
+                                           const MacAddress&  traffic_mac)
 {
     std::chrono::steady_clock::time_point current_time =
         std::chrono::steady_clock::now();
 
-    // Issue another gratuitous ARP if it's been a second or more since the last
-    // one
-    if (current_time - devices[device_index].last_garp_timestamp >=
-        std::chrono::seconds(1))
+    // Issue another gratuitous ARP if it's been a second or more since the last one
+    if (current_time - devices[device_index].last_garp_timestamp >= std::chrono::seconds(1))
     {
         // Log the fact that we're going to issue a gratuitous ARP
         logIssuingGratuitousArp(devices[device_index].ip_address,
@@ -1002,22 +953,21 @@ void PosixSleepProxyImpl::restoreArpTables(const unsigned int device_index,
                                 traffic_mac);
 
         // Send the gratuitous ARP
-        sendGratuitousArp(devices[device_index].ip_address,
-                          devices[device_index].mac_address);
+        sendGratuitousArp(devices[device_index].ip_address, devices[device_index].mac_address);
 
         // Save current time as the last time  sent
         devices[device_index].last_garp_timestamp = current_time;
     }
 }
 
-//==============================================================================
-// Sets the sleep status of all monitored devices based on how they've responded
-// to prior sleep checks
-//==============================================================================
+//=============================================================================================
+// Sets the sleep status of all monitored devices based on how they've responded to prior sleep
+// checks
+//=============================================================================================
 void PosixSleepProxyImpl::setSleepStatus()
 {
-    // See which devices have yet to respond.  The ones that haven't responded
-    // are deemed asleep.
+    // See which devices have yet to respond.  The ones that haven't responded are deemed
+    // asleep.
 
     // Check all devices
     for(unsigned int i = 0; i < devices.size(); i++)
@@ -1028,10 +978,10 @@ void PosixSleepProxyImpl::setSleepStatus()
             // Log the fact that this device has fallen asleep
             logDeviceAsleep(devices[i].ip_address, devices[i].mac_address);
 
-            // Since this device is now asleep, this proxy should intercept all
-            // traffic bound for it.  To accomplish this, a single gratuitous
-            // ARP associating this proxy device's MAC with the IP address of
-            // the device that has just fallen asleep can be issued.
+            // Since this device is now asleep, this proxy should intercept all traffic bound
+            // for it.  To accomplish this, a single gratuitous ARP associating this proxy
+            // device's MAC with the IP address of the device that has just fallen asleep can
+            // be issued.
             if (aggressive_garp)
             {
                 // TODO: re-enable this
@@ -1045,9 +995,9 @@ void PosixSleepProxyImpl::setSleepStatus()
     }
 }
 
-//==============================================================================
+//=============================================================================================
 // Issues sleep check messages for all monitored devices
-//==============================================================================
+//=============================================================================================
 void PosixSleepProxyImpl::issueSleepChecks()
 {
     // Create a socket to issue requests
@@ -1055,8 +1005,7 @@ void PosixSleepProxyImpl::issueSleepChecks()
     query_socket.setOutputInterface(interface_name);
 
     // Get a pointer to the ARP section of the request
-    arp_ipv4* arp_req_arp =
-        (arp_ipv4*)(arp_request + sizeof(ethernet_ii_header));
+    arp_ipv4* arp_req_arp = (arp_ipv4*)(arp_request + sizeof(ethernet_ii_header));
 
     // ARP request to all devices
     for(unsigned int i = 0; i < devices.size(); i++)
@@ -1070,14 +1019,13 @@ void PosixSleepProxyImpl::issueSleepChecks()
         devices[i].ip_address.DataField::writeRaw(arp_req_arp->tpa);
 
         // Issue the request
-        query_socket.write(arp_request,
-                           sizeof(ethernet_ii_header) + sizeof(arp_ipv4));
+        query_socket.write(arp_request, sizeof(ethernet_ii_header) + sizeof(arp_ipv4));
     }
 }
 
-//==============================================================================
+//=============================================================================================
 // Writes the PID of the calling process to file
-//==============================================================================
+//=============================================================================================
 void PosixSleepProxyImpl::writePidToFile(const std::string& pid_filename)
 {
     std::ofstream out_stream(pid_filename.c_str());
