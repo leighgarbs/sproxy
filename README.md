@@ -1,10 +1,25 @@
-# sproxy - a monolithic LAN sleep proxy
+**[sproxy](https://github.com/leighgarbs/sproxy.git)** -
+  Monolithic LAN sleep proxy
+==========================================================
 
-This is an implementation of [this concept](https://en.wikipedia.org/wiki/Bonjour_Sleep_Proxy).
+For personal use.  This is an implementation of [this concept](https://en.wikipedia.org/wiki/Bonjour_Sleep_Proxy) that only uses ARP (no multicast DNS).
 
-Features
-* Uses magic packets to wake needed sleeping or hibernating devices which support Wake-on-LAN
-* Uses "ARP spoofing" to "stand in" for sleeping or hibernating devices on the LAN
-* Periodically polls all configured network devices for sleep status
-* IPv4 support (no IPv6 yet)
+## Features ##
+* Uses [ARP spoofing](https://en.wikipedia.org/wiki/ARP_spoofing) to receive traffic intended for sleeping or hibernating devices on the LAN
+* Uses [magic packets](https://en.wikipedia.org/wiki/Wake-on-LAN#Magic_packet) to wake needed sleeping or hibernating devices which support [Wake-on-LAN](https://en.wikipedia.org/wiki/Wake-on-LAN)
+* Periodically polls all configured network devices for sleep status using ARP requests
+* Configurable
+* IPv4 support
 * Ethernet v2 support
+* Runnable as a daemon
+* Logs useful information to log file during runtime
+
+## Goals ##
+* Transition to object-oriented C++ (see branch "refactor")
+* Add tests
+* IPv6 support
+
+## Style ##
+* No tabs, only spaces
+* 4 space indents
+* Lines wrap to 80 characters

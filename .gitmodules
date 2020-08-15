@@ -1,6 +1,6 @@
-[submodule "toolbox"]
-        path = toolbox
-        url = ../../leighgarbs/toolbox.git
-[submodule "common"]
-	path = common
-	url = ../../leighgarbs/common.git
+[submodule "tools-cmake"]
+	path = tools-cmake
+	url = ../../leighgarbs/tools-cmake.git
+[submodule "tools-cpp"]
+	path = tools-cpp
+	url = ../../leighgarbs/tools-cpp.git

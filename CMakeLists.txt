@@ -4,18 +4,50 @@ project(sproxy)
 # available online
 cmake_minimum_required(VERSION 2.6)
 
-# This project depends on the project in the toolbox subdirectory
-add_subdirectory(toolbox)
+include(tools-cmake/ProjectCommon.cmake)
 
-# Include common project setup
-include(${CMAKE_CURRENT_LIST_DIR}/common/ProjectCommon.cmake)
+#===============================================================================
+# LIBSPROXY
+#===============================================================================
 
-# This project outputs this executable
-add_executable(${PROJECT_NAME} sproxy.cpp)
+# Everything except the main() function builds into here.  main() is in
+# main.cpp which is built into an executable that links to this.
+set(SRC
+  SleepProxy.cpp
+  SleepProxyImpl.cpp
+  SleepProxyFactory.cpp)
 
-# We need to link toolbox
-target_link_libraries(${PROJECT_NAME} toolbox)
+if(MACOS OR LINUX)
+  list(APPEND SRC
+    PosixSleepProxyImpl.cpp)
+endif(MACOS OR LINUX)
 
-# Include toolbox headers
-target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE
-  toolbox toolbox/networking)
+add_library(${PROJECT_NAME} ${SRC})
+
+# We need only this include directory, cmake will take care of including
+# dependency headers
+target_include_directories(${PROJECT_NAME} PUBLIC .)
+
+# Add the tools-cpp library and link to it
+add_subdirectory(tools-cpp)
+target_link_libraries(${PROJECT_NAME} tools-cpp)
+
+#===============================================================================
+# SPROXY-MAIN
+#===============================================================================
+
+set(PROJECT_MAIN ${PROJECT_NAME}-main)
+
+# Add the target that builds the sproxy executable
+add_executable(${PROJECT_MAIN} main.cpp)
+
+# We want to generate an executable named "sproxy", which normally
+# add_executable would do, but the add_library above for libsproxy already
+# defined the sproxy target
+set_target_properties(${PROJECT_MAIN} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
+target_link_libraries(${PROJECT_MAIN} ${PROJECT_NAME})
+
+# Add test subdirectories (these don't build unconditionally)
+if(MACOS OR LINUX)
+  add_subdirectory(PosixSleepProxyImpl_test EXCLUDE_FROM_ALL)
+endif(MACOS OR LINUX)

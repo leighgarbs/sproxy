@@ -1,0 +1,25 @@
+# CMake files and directories
+CMakeCache.txt
+CMakeFiles
+CTestTestfile.cmake
+DartConfiguration.tcl
+Makefile
+Temporary
+Testing
+cmake_install.cmake
+
+# Emacs temporary files
+*~
+\#*
+.#*
+
+# Build output
+libsproxy.a
+libsproxy.so
+sproxy
+
+# Ignore the test binaries but not the identically-named directories (on Linux
+# and macOS) that contain them
+*.exe
+*_test
+!*_test/
