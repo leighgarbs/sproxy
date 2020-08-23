@@ -4,6 +4,6 @@
 
 int main(int argc, char** argv)
 {
-    SleepProxy sproxy(argc, argv, std::chrono::milliseconds(100));
+    SleepProxy sproxy(argc, argv);
     return sproxy.run();
 }

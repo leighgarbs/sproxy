@@ -1,5 +1,3 @@
-#include <chrono>
-
 #include "SleepProxyFactory.hpp"
 
 #if defined LINUX || MACOS
@@ -10,13 +8,10 @@
 #endif
 
 //=============================================================================================
-SleepProxyImpl* SleepProxyFactory::createSleepProxy(int                             argc,
-                                                    char**                          argv,
-                                                    const std::chrono::nanoseconds& period,
-                                                    const std::chrono::nanoseconds& tolerance)
+SleepProxyImpl* SleepProxyFactory::createSleepProxy(int argc, char** argv)
 {
 #if defined LINUX || MACOS
-    return new PosixSleepProxyImpl(argc, argv, period, tolerance);
+    return new PosixSleepProxyImpl(argc, argv);
 #else
     // Should be replaced with a proper implementation
     return new NoopSleepProxyImpl();

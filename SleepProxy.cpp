@@ -9,13 +9,10 @@
 #include "misc.hpp"
 
 //=============================================================================================
-SleepProxy::SleepProxy(int                             argc,
-                       char**                          argv,
-                       const std::chrono::nanoseconds& period,
-                       const std::chrono::nanoseconds& tolerance) :
+SleepProxy::SleepProxy(int argc, char** argv) :
     sleep_proxy_impl(0)
 {
-    sleep_proxy_impl = SleepProxyFactory::createSleepProxy(argc, argv, period, tolerance);
+    sleep_proxy_impl = SleepProxyFactory::createSleepProxy(argc, argv);
 
     if (!sleep_proxy_impl)
     {

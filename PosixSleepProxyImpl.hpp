@@ -27,13 +27,7 @@ class PosixSleepProxyImpl : public SleepProxyImpl
 {
 public:
 
-    PosixSleepProxyImpl(
-        int                             argc,
-        char**                          argv,
-        const std::chrono::nanoseconds& period,
-        const std::chrono::nanoseconds& tolerance =
-        std::chrono::nanoseconds(static_cast<unsigned int>(1e8)));
-
+    PosixSleepProxyImpl(int argc, char** argv);
     virtual ~PosixSleepProxyImpl();
 
     virtual void step();

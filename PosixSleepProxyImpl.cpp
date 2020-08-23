@@ -37,11 +37,8 @@
 const unsigned int PosixSleepProxyImpl::PARSING_BUFFER_LENGTH = 1000;
 
 //=============================================================================================
-PosixSleepProxyImpl::PosixSleepProxyImpl(int                             argc,
-                                         char**                          argv,
-                                         const std::chrono::nanoseconds& period,
-                                         const std::chrono::nanoseconds& tolerance) :
-    SleepProxyImpl(argc, argv, period, tolerance),
+PosixSleepProxyImpl::PosixSleepProxyImpl(int argc, char** argv) :
+    SleepProxyImpl(argc, argv),
     default_filename("/etc/sproxy/config"),
     config_filename("/etc/sproxy/devices"),
     log_filename("/var/log/sproxy.log"),

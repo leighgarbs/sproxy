@@ -12,12 +12,7 @@ class SleepProxyFactory
 public:
 
     // The interface through which platform-specific signal managers are acquired.
-    static SleepProxyImpl* createSleepProxy(
-        int                             argc,
-        char**                          argv,
-        const std::chrono::nanoseconds& period,
-        const std::chrono::nanoseconds& tolerance =
-        std::chrono::nanoseconds(static_cast<unsigned int>(1e8)));
+    static SleepProxyImpl* createSleepProxy(int argc, char** argv);
 
 private:
 

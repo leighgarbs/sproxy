@@ -1,4 +1,3 @@
-#include <chrono>
 #include <iostream>
 #include <stdexcept>
 
@@ -21,7 +20,7 @@ Test::Result PosixSleepProxyImpl_test::Constructor::body()
 {
     try
     {
-        PosixSleepProxyImpl sproxy(0, 0, std::chrono::milliseconds(100));
+        PosixSleepProxyImpl sproxy(0, 0);
     }
     catch (std::runtime_error& ex)
     {

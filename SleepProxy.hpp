@@ -13,12 +13,7 @@ class SleepProxy : virtual public FixedRateProgramInterface
 {
 public:
 
-    SleepProxy(int                             argc,
-               char**                          argv,
-               const std::chrono::nanoseconds& period,
-               const std::chrono::nanoseconds& tolerance =
-               std::chrono::nanoseconds(static_cast<unsigned int>(1e8)));
-
+    SleepProxy(int argc, char** argv);
     virtual ~SleepProxy();
 
     // Program
